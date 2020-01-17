@@ -145,7 +145,13 @@ public class WSimplifiedSales extends CustomForm
 	WSearchEditor fldBP;
 	WSearchEditor fldPR;
 	Listbox fldDT;
-	int mBP = 0;
+	int C_BPartner_ID = 0;
+	int M_Warehouse_ID = 0;
+	int M_Product_ID = 0;
+	int M_PriceList_ID = 0;
+	int C_DocType_ID = 0;
+	int AD_Org_ID = 0;
+	
 
 	Properties ctx = Env.getCtx();
 
@@ -325,11 +331,11 @@ public class WSimplifiedSales extends CustomForm
 		ZKUpdateUtil.setVflex((HtmlBasedComponent) this.vmainLayout, "1");
 		this.dataTable.setAttribute("org.zkoss.zul.nativebar", (Object) "true");
 		ZKUpdateUtil.setHflex((HtmlBasedComponent) this.dataTable, "1");
-		this.vmainLayout.setStyle("margin-left: 5px;margin-top: 5px;");
+		this.vmainLayout.setStyle("margin-left: 5px;margin-top: 6px;");
 		this.mainLayout.appendChild((Component) this.vmainLayout);
 		this.pcustLayout.setBorder("normal");
 		this.pcustLayout.setHflex("1");
-		this.pcustLayout.setVflex("6");
+		this.pcustLayout.setVflex("7");
 		this.pcustLayout.setStyle(borderStyle);
 		this.pprodLayout.setBorder("normal");
 		this.pprodLayout.setHflex("1");
@@ -631,8 +637,57 @@ public class WSimplifiedSales extends CustomForm
 
 	@Override
 	public void valueChange(ValueChangeEvent evt) {
-		// TODO Auto-generated method stub
-
+		
+		if (evt.getPropertyName().equals(MOrder.COLUMNNAME_C_BPartner_ID)) {
+			if (evt.getNewValue() != null) {
+				C_BPartner_ID = ((Integer) evt.getNewValue()).intValue();
+				fldBP.setValue(C_BPartner_ID);
+			} else {
+				C_BPartner_ID = 0;
+				fldBP.setValue(null);
+			}
+		}
+		
+		if (evt.getPropertyName().equals(MOrder.COLUMNNAME_C_DocType_ID)) {
+			if (evt.getNewValue() != null) {
+				C_DocType_ID = ((Integer) evt.getNewValue()).intValue();
+				fldDT.setValue(C_DocType_ID);
+			} else {
+				C_DocType_ID = 0;
+				fldDT.setValue(null);
+			}
+		}
+		
+		
+		if (evt.getPropertyName().contentEquals(MOrder.COLUMNNAME_M_Warehouse_ID)) {
+			if (evt.getNewValue() != null) {
+				M_Warehouse_ID = ((Integer) evt.getNewValue()).intValue();
+				fldWH.setValue(M_Warehouse_ID);
+			} else {
+				M_Warehouse_ID = 0;
+				fldWH.setValue(null);
+			}
+		}
+		
+		if (evt.getPropertyName().contentEquals(MOrder.COLUMNNAME_M_PriceList_ID)) {
+			if (evt.getNewValue() != null) {
+				M_PriceList_ID = ((Integer) evt.getNewValue()).intValue();
+				fldPL.setValue(M_PriceList_ID);
+			} else {
+				M_PriceList_ID = 0;
+				fldWH.setValue(null);
+			}
+		}
+		
+		if (evt.getPropertyName().contentEquals(MOrder.COLUMNNAME_M_PriceList_ID)) {
+			if (evt.getNewValue() != null) {
+				M_PriceList_ID = ((Integer) evt.getNewValue()).intValue();
+				fldPL.setValue(M_PriceList_ID);
+			} else {
+				M_PriceList_ID = 0;
+				fldWH.setValue(null);
+			}
+		}
 	}
 
 	@Override
