@@ -1,0 +1,33 @@
+Manifest-Version: 1.0
+Bundle-Category: idempiere-plugin
+Bundle-ManifestVersion: 2
+Bundle-Name: INGEINT POS
+Bundle-SymbolicName: com.ingeint.pos
+Bundle-Version: 7.1.0.qualifier
+Bundle-Vendor: INGEINT <https://www.ingeint.com>
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.apache.commons.lang3,
+ org.adempiere.base,
+ org.adempiere.plugin.utils,
+ org.adempiere.ui.zk,
+ zcommon,
+ zel,
+ zhtml,
+ zk,
+ zkbind,
+ zkplus,
+ zul,
+ zweb,
+ slf4j.api
+Import-Package: org.compiere.minigrid,
+ org.osgi.service.event
+Service-Component: OSGI-INF/ModelFactory.xml,
+ OSGI-INF/EventFactory.xml,
+ OSGI-INF/CalloutFactory.xml,
+ OSGI-INF/ProcessFactory.xml,
+ OSGI-INF/FormFactory.xml
+Bundle-ClassPath: .,
+ lib/velocity-engine-core.jar
+Bundle-Activator: org.adempiere.plugin.utils.Incremental2PackActivator
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Automatic-Module-Name: com.ingeint.pos
