@@ -1,20 +1,17 @@
 package com.ingeint.pos.forms;
 
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.Timestamp;
-import java.text.NumberFormat;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Level;
 
 import org.adempiere.webui.component.Button;
-import org.adempiere.webui.component.Checkbox;
-import org.adempiere.webui.component.Column;
-import org.adempiere.webui.component.Columns;
 import org.adempiere.webui.component.Grid;
 import org.adempiere.webui.component.GridFactory;
 import org.adempiere.webui.component.Label;
+import org.adempiere.webui.component.ListModelTable;
 import org.adempiere.webui.component.Listbox;
 import org.adempiere.webui.component.ListboxFactory;
 import org.adempiere.webui.component.Row;
@@ -37,7 +34,7 @@ import org.compiere.model.MLookup;
 import org.compiere.model.MLookupFactory;
 import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
-import org.compiere.model.MSysConfig;
+import org.compiere.model.MProduct;
 import org.compiere.util.CLogger;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
@@ -54,20 +51,30 @@ import org.zkoss.zul.Window;
 
 import com.ingeint.pos.base.CustomForm;
 
-public class WSimplifiedSales extends CustomForm
+public class WPos extends CustomForm
 		implements IFormController, WTableModelListener, ValueChangeListener, EventListener<Event> {
 
-	private static int bigDecimalScale;
-	private static final long serialVersionUID = 4169799434596051062L;
-	public static CLogger log;
-	private BigDecimal bPartnerDiscount;
-	private MOrder order;
-	public final static int COLUMN_C_PERIOD_AD_ORG_ID = 2163;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -7614729730751655335L;
+
+	/** Logger */
+	public static final CLogger log = CLogger.getCLogger(WPos.class);
+
+	private Boolean isNew = true;
+
+	private Button btnSave;
+	private Button btnDiscart;
+	private Button btnProcess;
+	private Button btnPrint;
+	private Button cancelButton;
+	private Button payButton;
 
 	private Rows custRows;
+	private Grid custLayout;
 	private Window mainLayout;
 	private Vbox vmainLayout;
-	private Grid custLayout;
 	private Window pcustLayout;
 	private Hbox prodLayout;
 	private Window pprodLayout;
@@ -91,14 +98,6 @@ public class WSimplifiedSales extends CustomForm
 	private Label doctypeLabel;
 	private Label priceListLabel;
 
-	private Button btnSave;
-	private Button btnDiscart;
-	private Button btnProcess;
-	private Button btnPrint;
-	private Button cancelButton;
-	private Button payButton;
-	private Button deleteAllButton;
-	
 	private Label totalLabel;
 	private Label totalDecimalbox;
 	private Label subTotalLabel;
@@ -113,11 +112,10 @@ public class WSimplifiedSales extends CustomForm
 	private Label lbldocumentNo;
 	private Label documentNo;
 	private Label lblSalesRep;
-		
-	
-	private Label organizationLabel = new Label();
-	private Label warehouseLabel = new Label();
-	
+
+	private Label organizationLabel;
+	private Label warehouseLabel;
+
 	private Textbox bpartnerTextBox;
 	private WDateEditor entryDate;
 	private WDateEditor dateScheduled;
@@ -128,33 +126,27 @@ public class WSimplifiedSales extends CustomForm
 	private MLookup lookupProduct;
 	private MLookup lookupBP;
 
-	private int AD_Column_ID_BPartner_ID;
-	private int AD_Column_ID_Product;
-	private int AD_Column_ID_MPriceList;
-	private int AD_Column_ID_C_DocType_ID;
-	private int AD_Column_ID_SalesRep_ID;
-	
 	private WTableDirEditor docTypePick;
-	private WTableDirEditor pricelistPick;		
+	private WTableDirEditor pricelistPick;
 	private WTableDirEditor organizationPick;
 	private WTableDirEditor fldPL;
 	private WTableDirEditor fldWH;
 	private WTableDirEditor fldSR;
-		
-	private NumberFormat nf;
-	Checkbox chbBeneficiary;
-	Textbox txtPoints;
-	private Object tmp;
+	private WTableDirEditor flUOM;
+
 	WSearchEditor fldBP;
 	WSearchEditor fldPR;
-	Listbox fldDT = new Listbox();
+
 	int C_BPartner_ID = 0;
-	int M_Warehouse_ID = 0;
-	int M_Product_ID = 0;
-	int M_PriceList_ID = 0;
 	int C_DocType_ID = 0;
-	int AD_Org_ID = 0;
-	
+	int M_Warehouse_ID = 0;
+	int M_PriceList_ID = 0;
+	BigDecimal priceActual = Env.ZERO;
+	BigDecimal qtyEntered = Env.ONE;
+
+	private MProduct product;
+
+	Listbox fldDT = new Listbox();
 
 	Properties ctx = Env.getCtx();
 
@@ -162,12 +154,11 @@ public class WSimplifiedSales extends CustomForm
 	protected void initForm() {
 
 		Env.setContext(Env.getCtx(), this.m_WindowNo, "IsSOTrx", "Y");
-		this.bPartnerDiscount = Env.ZERO;
 
 		this.mainLayout = new Window();
 		this.vmainLayout = new Vbox();
-		this.custLayout = GridFactory.newGridLayout();
 		this.pcustLayout = new Window();
+		this.custLayout = GridFactory.newGridLayout();
 		this.prodLayout = new Hbox();
 		this.pprodLayout = new Window();
 		this.gLayout = new Vbox();
@@ -179,6 +170,7 @@ public class WSimplifiedSales extends CustomForm
 		this.t1Layout = new Hbox();
 		this.t2Layout = new Hbox();
 		this.txLayout = new Hbox();
+
 		this.ptotalLayout = new Window();
 		this.tLine1 = new Hbox();
 		this.tLine2 = new Hbox();
@@ -196,10 +188,10 @@ public class WSimplifiedSales extends CustomForm
 		this.btnSave = new Button();
 		this.btnDiscart = new Button();
 		this.btnProcess = new Button();
-		this.btnPrint = new Button();		
+		this.btnPrint = new Button();
 		this.cancelButton = new Button();
 		this.payButton = new Button();
-		
+
 		this.totalLabel = new Label();
 		this.totalDecimalbox = new Label();
 		this.subTotalLabel = new Label();
@@ -209,64 +201,62 @@ public class WSimplifiedSales extends CustomForm
 		this.dctLabel = new Label();
 		this.dctDecimalbox = new Label();
 		this.lblCredit = new Label();
+		this.organizationLabel = new Label();
+		this.warehouseLabel = new Label();
+
 		this.bpartnerTextBox = new Textbox();
-	
-		this.deleteAllButton = new Button();
-	
+
 		this.entryDateLabel = new Label();
 		this.lblDateScheduled = new Label();
 		this.entryDate = new WDateEditor();
 		this.dateScheduled = new WDateEditor();
-	
+
 		this.grandTotal = Env.ZERO;
 		this.taxTotal = Env.ZERO;
 		this.subTotal = Env.ZERO;
+
 		this.lookupProduct = null;
 		this.lookupBP = null;
-		this.AD_Column_ID_BPartner_ID = 2893;
-		this.AD_Column_ID_Product = 1402;
-		this.AD_Column_ID_MPriceList = 2202;
-		this.AD_Column_ID_C_DocType_ID = 2172;
-		this.AD_Column_ID_SalesRep_ID = 2186;
-		
-		try {
 
-			WSimplifiedSales.bigDecimalScale = MSysConfig.getIntValue("SMJ_POS_DECIMAL_NUMBERS", 0);
-			this.grandTotal = this.grandTotal.setScale(WSimplifiedSales.bigDecimalScale, RoundingMode.HALF_UP);
-			this.subTotal = this.subTotal.setScale(WSimplifiedSales.bigDecimalScale, RoundingMode.HALF_UP);
-			this.bPartnerDiscount = this.bPartnerDiscount.setScale(WSimplifiedSales.bigDecimalScale,
-				RoundingMode.HALF_UP);
-			this.taxTotal = this.taxTotal.setScale(WSimplifiedSales.bigDecimalScale, RoundingMode.HALF_UP);
+		try {
 
 			this.dynInit();
 			this.zkInit();
 			this.addEventListener("onPayment", (EventListener) this);
 
-		} catch (Exception e) {
-			WSimplifiedSales.log.log(Level.SEVERE, "WSimplifiedSales constructor error", (Throwable) e);
+		}
+
+		catch (Exception e) {
+			log.log(Level.SEVERE,
+					String.valueOf(this.getClass().getCanonicalName()) + ".dynInit - ERROR: " + e.getMessage(),
+					(Throwable) e);
 			SessionManager.getAppDesktop().closeActiveWindow();
 		}
+
 	}
 
 	private void dynInit() throws Exception {
+
 		try {
 
 			// BPartner
-			lookupBP = MLookupFactory.get(ctx, this.getWindowNo(), 0, this.AD_Column_ID_BPartner_ID, DisplayType.Search);
+			int AD_Column_ID = 2893;
+			lookupBP = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.Search);
 			fldBP = new WSearchEditor(MOrder.COLUMNNAME_C_BPartner_ID, true, false, true, lookupBP);
 			fldBP.addValueChangeListener(this);
 			fldBP.setReadWrite(true);
 
 			// Product
-			lookupProduct = MLookupFactory.get(ctx, this.getWindowNo(), 0, this.AD_Column_ID_Product,
-					DisplayType.Search);
+			AD_Column_ID = 1402;
+			lookupProduct = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.Search);
 			fldPR = new WSearchEditor(MOrderLine.COLUMNNAME_M_Product_ID, true, false, true, lookupProduct);
 			fldPR.addValueChangeListener(this);
 			fldPR.setReadWrite(true);
-			
-			// Organization filter selection
-			int AD_Column_ID = COLUMN_C_PERIOD_AD_ORG_ID; 
-			MLookup lookupOrg = MLookupFactory.get(Env.getCtx(), this.getWindowNo(), 0, AD_Column_ID, DisplayType.TableDir);
+
+			// Organization
+			AD_Column_ID = 2163;
+			MLookup lookupOrg = MLookupFactory.get(Env.getCtx(), this.getWindowNo(), 0, AD_Column_ID,
+					DisplayType.TableDir);
 			organizationPick = new WTableDirEditor("AD_Org_ID", true, false, true, lookupOrg);
 			organizationPick.setValue(Env.getAD_Org_ID(Env.getCtx()));
 			organizationPick.addValueChangeListener(this);
@@ -276,38 +266,55 @@ public class WSimplifiedSales extends CustomForm
 			MLookup lookupDT = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.TableDir);
 			docTypePick = new WTableDirEditor(MOrder.COLUMNNAME_C_DocType_ID, true, false, true, lookupDT);
 			docTypePick.addValueChangeListener(this);
-						
+
 			// PriceList
 			AD_Column_ID = 2204;
 			MLookup lookupPL = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.TableDir);
 			fldPL = new WTableDirEditor(MOrder.COLUMNNAME_M_PriceList_ID, true, false, true, lookupPL);
 			fldPL.addValueChangeListener(this);
-			
+
 			// Warehouse
 			AD_Column_ID = 1151;
 			MLookup lookupWH = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.TableDir);
 			fldWH = new WTableDirEditor(MOrder.COLUMNNAME_M_Warehouse_ID, true, false, true, lookupWH);
 			fldWH.addValueChangeListener(this);
-			
-			//SalesRep_ID
-			MLookup lookupSR = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID_SalesRep_ID, DisplayType.TableDir);
+
+			// SalesRep_ID
+			AD_Column_ID = 2186;
+			MLookup lookupSR = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.TableDir);
 			fldSR = new WTableDirEditor(MOrder.COLUMNNAME_SalesRep_ID, true, false, true, lookupSR);
 			fldSR.addValueChangeListener(this);
 
-			// this.listTmpSales();
+			// UOM
+			AD_Column_ID = 2222;
+			MLookup lookupUOM = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.Table);
+			flUOM = new WTableDirEditor(MOrderLine.COLUMNNAME_C_UOM_ID, true, false, true, lookupUOM);
+			flUOM.addValueChangeListener(this);
+
 			final Timestamp time = Env.getContextAsDate(Env.getCtx(), "#Date");
 			this.entryDate.setValue((Object) time);
 			this.dateScheduled.setValue((Object) time);
-		
-			// this.validateSalesRep();
+
 		} catch (Exception e) {
-			WSimplifiedSales.log.log(Level.SEVERE,
+			log.log(Level.SEVERE,
 					String.valueOf(this.getClass().getCanonicalName()) + ".dynInit - ERROR: " + e.getMessage(),
 					(Throwable) e);
 		}
 	}
 
-		
+	private void loadLines(MProduct product) throws IOException {
+
+		Vector<String> columnNames = com.ingeint.pos.forms.OrderLines.getColumnNames();
+		Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product, M_PriceList_ID);
+
+		ListModelTable modelOl = new ListModelTable(data);
+		modelOl.addTableModelListener(this);
+		dataTable.getModel().removeTableModelListener(this);
+		dataTable.setData(modelOl, columnNames);
+		log.warning("Registros: " + dataTable.getRows());
+
+	}
+
 	private void zkInit() throws Exception {
 
 		final String borderStyle = "border: 1px solid #C0C0C0; border-radius:5px;";
@@ -316,15 +323,11 @@ public class WSimplifiedSales extends CustomForm
 		final String columnStyle = "font-size: 12px;font-weight:bold; color: black; ";
 		final String labelStyle = "border: 0px solid #C0C0C0; border-radius:5px;font-size: 28px;font-weight: bolder; background:#ffffff; text-align: left;";
 
-		final String buttonRed = "background:#7c7bad;Height:15px;Width:120px;border: 1px solid #D2D2FF;border-radius:4px;padding: 1px 1px;font-family: Arial; font-weight:bold; font-size: 12px;font-weight: 400; color: white";
-		final String buttonGreen = "background:#7c7bad;Height:35px;Width:200px;border: 3px solid#848484;border-radius:10px;padding: 1px 1px;font-family: Arial, Helvetica, sans-serif;font-size: 12px;font-weight: normal; letter-spacing:0.1em; color: white";
-		
 		final String buttonTomato = "background:#7c7bad;Height:35px;Width:160px;border: 3px solid #D2D2FF;border-radius:8px;padding: 1px 1px;font-family: Arial, Helvetica, sans-serif;font-size: 12px;font-weight: normal; letter-spacing:0.1em; color: white";
 		final String buttonYellow = "background:yellow;Height:35px;Width:200px;border: 3px solid#5b5a91;border-radius:8px;padding: 1px 1px;font-family: Arial, Helvetica, sans-serif;font-size: 12px;font-weight: bolder;color: black";
 		final String rowStyle = "Height:30px; border-style: dotted;";
 		final String spacing1 = "30rem";
 		final String spacing2 = "120rem";
-		
 		ZKUpdateUtil.setVflex((HtmlBasedComponent) this.mainLayout, "1");
 		ZKUpdateUtil.setHflex((HtmlBasedComponent) this.mainLayout, "1");
 		this.mainLayout.setParent((Component) this);
@@ -357,11 +360,8 @@ public class WSimplifiedSales extends CustomForm
 		this.ptotalLayout.setVflex("4");
 		this.custLayout.setAlign("left");
 		this.custLayout.setWidth("99%");
-		
-		final Columns columns = this.getColumnsFlex("10", "18", "3", "0", "6", "9", "6", "9", "8", "9", "7", "9", "7");
-		//this.custLayout.appendChild((Component)columns);
-        (this.custRows = this.custLayout.newRows()).setHeight("20px");
-        this.prodLayout.setAlign("left");
+		(this.custRows = this.custLayout.newRows()).setHeight("20px");
+		this.prodLayout.setAlign("left");
 		this.prodLayout.setWidths("4%,18%,60%,5%,5%,5%");
 		ZKUpdateUtil.setHflex((HtmlBasedComponent) this.prodLayout, "1");
 		ZKUpdateUtil.setVflex((HtmlBasedComponent) this.prodLayout, "1");
@@ -395,16 +395,19 @@ public class WSimplifiedSales extends CustomForm
 		this.totalLayout.appendChild((Component) this.tLine2);
 		this.totalLayout.appendChild((Component) this.tLineButtons);
 		this.bPartnerLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "customer")).toString());
-		this.bPartnerLabel.setTooltiptext(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_BPartner_ID")).toString());
+		this.bPartnerLabel
+				.setTooltiptext(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_BPartner_ID")).toString());
 		this.doctypeLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_DocType")).toString());
-		this.organizationLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "Organization")).toString());
+		this.organizationLabel
+				.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "Organization")).toString());
 		this.priceListLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "PriceList")).toString());
-		this.warehouseLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "M_Warehouse_ID")).toString());
+		this.warehouseLabel
+				.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "M_Warehouse_ID")).toString());
 		this.lbldocumentNo.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "DocumentNo")).toString());
 		this.lblSalesRep.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "SalesRep_ID")).toString());
 		this.lblCredit.setText(Msg.translate(Env.getCtx(), "Credits"));
 
-		this.productLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "M_Product_ID")).toString());
+		this.productLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_OrderLine_ID")).toString());
 		this.productTextBox.addEventListener("onBlur", (EventListener) this);
 		this.totalLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "Total")).toString());
 		this.subTotalLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "SubTotal")).toString());
@@ -424,46 +427,39 @@ public class WSimplifiedSales extends CustomForm
 		this.btnProcess.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Process")).toString());
 		this.btnProcess.addActionListener((EventListener) this);
 		this.btnProcess.setStyle(buttonTomato);
-		
+
 		this.btnPrint.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Print")).toString());
 		this.btnPrint.addActionListener((EventListener) this);
 		this.btnPrint.setStyle(buttonTomato);
-		
+
 		final Hbox cbuttons = new Hbox();
-		this.cancelButton.setStyle(buttonTomato);
-		this.cancelButton.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Delete")).toString());
-		this.cancelButton.addActionListener((EventListener) this);
 		this.payButton.setStyle(buttonTomato);
 		this.payButton.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_Payment_ID")).toString());
 		this.payButton.addActionListener((EventListener) this);
 
 		this.bpartnerTextBox.addEventListener("onBlur", (EventListener) this);
-		this.deleteAllButton.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Logout")).toString());
-		this.deleteAllButton.addActionListener((EventListener) this);
-		this.deleteAllButton.setStyle(buttonYellow);
 
 		Row row = this.custRows.newRow();
-		
+
 		// Principal Buttons
 		this.btnSave.setWidth("100%");
 		row.appendChild((Component) this.btnSave);
-		
-		row.appendChild((Component) this.btnDiscart);	
+		row.appendChild((Component) this.btnDiscart);
 		this.btnPrint.setWidth("100%");
 		row.appendChild((Component) this.btnPrint);
 		this.btnProcess.setWidth("100%");
 		row.appendChild((Component) this.btnProcess);
 		row.appendChild((Component) new Space());
-	
-		//Organization
-		row.appendChild((Component) new Space());		
+
+		// Organization
+		row.appendChild((Component) new Space());
 		organizationLabel.setStyle(columnStyle);
 		row.appendCellChild(organizationLabel);
-		row.appendCellChild(organizationPick.getComponent(),2);
+		row.appendCellChild(organizationPick.getComponent(), 2);
 
 		row = this.custRows.newRow(); // enter
 
-		//this.bPartnerLabel.setWidth("100%");
+		// this.bPartnerLabel.setWidth("100%");
 		this.bPartnerLabel.setStyle(columnStyle);
 		row.appendCellChild(this.bPartnerLabel);
 		row.appendCellChild(fldBP.getComponent(), 2);
@@ -472,23 +468,23 @@ public class WSimplifiedSales extends CustomForm
 		row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
 
-		//DateOrdered
-		this.lblDateScheduled.setStyle(columnStyle);		
+		// DateOrdered
+		this.lblDateScheduled.setStyle(columnStyle);
 		row.appendChild(this.lblDateScheduled);
 		row.appendChild((Component) this.dateScheduled.getComponent());
 
 		row = this.custRows.newRow(); // enter
 
-		//DocType
+		// DocType
 		doctypeLabel.setStyle(columnStyle);
 		row.appendCellChild(doctypeLabel);
 		ZKUpdateUtil.setHflex(docTypePick.getComponent(), "true");
-		row.appendCellChild(docTypePick.getComponent(),2);
-		
+		row.appendCellChild(docTypePick.getComponent(), 2);
+
 		row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
-		
+
 		lbldocumentNo.setStyle(columnStyle);
 		row.appendCellChild(lbldocumentNo);
 		documentNo.setStyle(labelStyle);
@@ -496,10 +492,10 @@ public class WSimplifiedSales extends CustomForm
 		documentNo.setLeft("0%");
 		row.appendCellChild(documentNo, 2);
 		row.appendChild((Component) new Space());
-		
+
 		row = this.custRows.newRow(); // enter
-		
-		//PriceList
+
+		// PriceList
 		priceListLabel.setStyle(columnStyle);
 		row.appendCellChild(priceListLabel);
 		ZKUpdateUtil.setHflex(fldPL.getComponent(), "true");
@@ -507,33 +503,32 @@ public class WSimplifiedSales extends CustomForm
 		row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
-		
-		//SalesRep
+
+		// SalesRep
 		lblSalesRep.setStyle(columnStyle);
 		row.appendCellChild(lblSalesRep);
 		row.appendCellChild(fldSR.getComponent(), 2);
-		
+
 		row = this.custRows.newRow(); // enter
-		
-		//Warehouse
+
+		// Warehouse
 		warehouseLabel.setStyle(columnStyle);
 		row.appendCellChild(warehouseLabel);
 		ZKUpdateUtil.setHflex(fldWH.getComponent(), "true");
 		row.appendCellChild(fldWH.getComponent(), 2);
 		row.appendChild((Component) new Space());
-		
+
 		row = this.custRows.newRow(); // enter
-		
-		//Products
+
+		// Products
 		this.productLabel.setStyle(columnStyle);
-		ZKUpdateUtil.setHflex((HtmlBasedComponent)this.productLabel, "2");
+		ZKUpdateUtil.setHflex((HtmlBasedComponent) this.productLabel, "2");
 		prodLayout.appendChild((Component) productLabel);
 		this.productTextBox.setWidth("80px");
 		this.prodLayout.appendChild(fldPR.getComponent());
-		
-		prodLayout.appendChild((Component) new Space());	      
-	        
-	       
+
+		prodLayout.appendChild((Component) new Space());
+
 		// OrderLines
 		this.dataTable.setStyle(
 				"div.z-grid-header { background: none repeat scroll 0 0 #FFFFFF; border: 1px solid #CFCFCF; overflow: hidden; }");
@@ -541,7 +536,7 @@ public class WSimplifiedSales extends CustomForm
 				"div.z-grid-header { background: none repeat scroll 0 0 #FFFFFF; border: 1px solid #CFCFCF; overflow: hidden; }");
 		this.barLayout.setWidth("250px");
 		this.dsLayout.setStyle(labelStyle);
-		
+
 		this.dsLayout.setAlign("end");
 		this.dctLabel.rightAlign();
 		this.dctLabel.setStyle(columnStyle);
@@ -596,56 +591,19 @@ public class WSimplifiedSales extends CustomForm
 		this.tLineButtons.appendChild((Component) this.payButton);
 		this.tLineButtons.appendChild((Component) this.cancelButton);
 
-		//this.bPartnerLabel.setClass("menu-href z-a");
-	
-	}
-	
-			
-	public Vector<String> setColumnClassNames(IMiniTable mTable) {
-		int i = 0;
+		this.dataTable.addEventListener("onDoubleClick", (EventListener) new EventListener<Event>() {
+			public void onEvent(final Event event) throws Exception {
+				dataTableOnDoubleClick();
+			}
+		});
 
-		Vector<String> columnNames = new Vector<String>();
-
-		mTable.setColumnClass(i++, Boolean.class, false);
-		columnNames.add(Msg.getMsg(ctx, "Select"));
-
-		mTable.setColumnClass(i++, Integer.class, true);
-		columnNames.add(Msg.getMsg(ctx, "Line"));
-
-		mTable.setColumnClass(i++, BigDecimal.class, true);
-		columnNames.add(Msg.getMsg(ctx, "Qty"));
-
-		mTable.setColumnClass(i++, BigDecimal.class, true);
-		columnNames.add(Msg.getMsg(ctx, "CoPayment"));
-
-		mTable.setColumnClass(i++, String.class, true);
-		columnNames.add(Msg.getMsg(ctx, "Value"));
-
-		mTable.setColumnClass(i++, String.class, true);
-		columnNames.add(Msg.getMsg(ctx, "Name"));
-
-		mTable.setColumnClass(i++, BigDecimal.class, true);
-		columnNames.add(Msg.getMsg(ctx, "standard.price"));
-
-		mTable.setColumnClass(i++, BigDecimal.class, true);
-		columnNames.add(Msg.getMsg(ctx, "list.price"));
-
-		mTable.setColumnClass(i++, BigDecimal.class, true);
-		columnNames.add(Msg.getMsg(ctx, "Rate"));
-
-		return columnNames;
-	} 
-	 
-	
-	@Override
-	public void onEvent(Event event) throws Exception {
-		// TODO Auto-generated method stub
+		// this.bPartnerLabel.setClass("menu-href z-a");
 
 	}
 
 	@Override
 	public void valueChange(ValueChangeEvent evt) {
-		
+
 		if (evt.getPropertyName().equals(MOrder.COLUMNNAME_C_BPartner_ID)) {
 			if (evt.getNewValue() != null) {
 				C_BPartner_ID = ((Integer) evt.getNewValue()).intValue();
@@ -655,20 +613,20 @@ public class WSimplifiedSales extends CustomForm
 				fldBP.setValue(null);
 			}
 		}
-		
+
 		if (evt.getPropertyName().equals(MOrder.COLUMNNAME_C_DocType_ID)) {
 			if (evt.getNewValue() != null) {
 				C_DocType_ID = ((Integer) evt.getNewValue()).intValue();
 				fldDT = new Listbox();
 				fldDT.setValue(C_DocType_ID);
-				//TODO Obtain the documentNo From C_Order	
+				// TODO Obtain the documentNo From C_Order
 				this.documentNo.setText("SO0183");
 			} else {
 				C_DocType_ID = 0;
 				fldDT.setValue(null);
 			}
 		}
-				
+
 		if (evt.getPropertyName().contentEquals(MOrder.COLUMNNAME_M_Warehouse_ID)) {
 			if (evt.getNewValue() != null) {
 				M_Warehouse_ID = ((Integer) evt.getNewValue()).intValue();
@@ -678,7 +636,7 @@ public class WSimplifiedSales extends CustomForm
 				fldWH.setValue(null);
 			}
 		}
-		
+
 		if (evt.getPropertyName().contentEquals(MOrder.COLUMNNAME_M_PriceList_ID)) {
 			if (evt.getNewValue() != null) {
 				M_PriceList_ID = ((Integer) evt.getNewValue()).intValue();
@@ -688,32 +646,70 @@ public class WSimplifiedSales extends CustomForm
 				fldWH.setValue(null);
 			}
 		}
-		
-		if (evt.getPropertyName().contentEquals(MOrder.COLUMNNAME_M_PriceList_ID)) {
+
+		if (evt.getPropertyName().contentEquals(MOrderLine.COLUMNNAME_QtyEntered)) {
 			if (evt.getNewValue() != null) {
-				M_PriceList_ID = ((Integer) evt.getNewValue()).intValue();
-				fldPL.setValue(M_PriceList_ID);
+				qtyEntered = new BigDecimal(evt.getNewValue().toString());
 			} else {
-				M_PriceList_ID = 0;
-				fldWH.setValue(null);
+				qtyEntered = Env.ONE;
 			}
 		}
+
+		if (evt.getPropertyName().contentEquals(MOrderLine.COLUMNNAME_M_Product_ID)) {
+			if (evt.getNewValue() != null) {
+				MProduct product = new MProduct(ctx, (Integer.valueOf(evt.getNewValue().toString())), null);
+				try {
+					loadLines(product);
+					fldPR.setValue(null);
+					fldPR.setReadWrite(true);
+
+					if (isNew) {
+						com.ingeint.pos.util.Utils.setWidths(this.dataTable.getListHead(), "4", "26", "8", "8", "8",
+								"8", "8");
+						com.ingeint.pos.forms.OrderLines.setTableColumnClass((IMiniTable) this.dataTable);
+						isNew = false;
+					}
+					
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	private void dataTableOnDoubleClick() {
+
+		final Integer index = this.dataTable.getSelectedIndex();
+		
 	}
 
 	@Override
 	public void tableChanged(WTableModelEvent event) {
-		// TODO Auto-generated method stub
 
+		boolean isUpdate = (event.getType() == WTableModelEvent.CONTENTS_CHANGED);
+		int column = event.getColumn();
+		int row = event.getLastRow();
+		// Is a table update
+
+		if (isUpdate) {
+
+			// Render now
+			ListModelTable model = (ListModelTable) event.getModel();
+
+			if (column == 2) { // Updated QtyEntered
+				BigDecimal qty = new BigDecimal(model.getDataAt(row, 2).toString());
+				qtyEntered = qty;
+
+			}
+
+			if (column == 4) { // Price updated
+
+				BigDecimal price = new BigDecimal(model.getDataAt(row, 4).toString());
+				priceActual = price;
+				model.setDataAt(priceActual.multiply(qtyEntered), row, 6);
+
+			}
+
+		}
 	}
-	
-	private Columns getColumnsFlex(final String... flexWeights) {
-        final Columns columns = new Columns();
-        for (final String flexWeight : flexWeights) {
-            final Column column = new Column();
-            ZKUpdateUtil.setHflex((HtmlBasedComponent)column, flexWeight);
-            ZKUpdateUtil.setVflex((HtmlBasedComponent)column, "1");
-            columns.appendChild((Component)column);
-        }
-        return columns;
-    }
 }
