@@ -18,7 +18,10 @@
 
 package com.ingeint.pos.component;
 
+import org.compiere.model.MInventoryLine;
+
 import com.ingeint.pos.base.CustomCalloutFactory;
+import com.ingeint.pos.callouts.MInventoryLineSave;
 
 /**
  * Callout Factory
@@ -36,6 +39,7 @@ public class CalloutFactory extends CustomCalloutFactory {
 	 */
 	@Override
 	protected void initialize() {
+		registerCallout(MInventoryLine.Table_Name, MInventoryLine.COLUMNNAME_Description, MInventoryLineSave.class);
 	}
 
 }

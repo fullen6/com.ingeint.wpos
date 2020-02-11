@@ -12,7 +12,6 @@ import org.adempiere.webui.component.Grid;
 import org.adempiere.webui.component.GridFactory;
 import org.adempiere.webui.component.Label;
 import org.adempiere.webui.component.ListModelTable;
-import org.adempiere.webui.component.Listbox;
 import org.adempiere.webui.component.ListboxFactory;
 import org.adempiere.webui.component.Row;
 import org.adempiere.webui.component.Rows;
@@ -50,6 +49,8 @@ import org.zkoss.zul.Vbox;
 import org.zkoss.zul.Window;
 
 import com.ingeint.pos.base.CustomForm;
+import com.ingeint.pos.functions.CreateUpdateOrder;
+import com.ingeint.pos.util.Styles;
 
 public class WPos extends CustomForm
 		implements IFormController, WTableModelListener, ValueChangeListener, EventListener<Event> {
@@ -63,6 +64,7 @@ public class WPos extends CustomForm
 	public static final CLogger log = CLogger.getCLogger(WPos.class);
 
 	private Boolean isNew = true;
+	ListModelTable modelOl;
 
 	private Button btnSave;
 	private Button btnDiscart;
@@ -110,6 +112,7 @@ public class WPos extends CustomForm
 	private Label entryDateLabel;
 	private Label lblDateScheduled;
 	private Label lbldocumentNo;
+
 	private Label documentNo;
 	private Label lblSalesRep;
 
@@ -126,27 +129,89 @@ public class WPos extends CustomForm
 	private MLookup lookupProduct;
 	private MLookup lookupBP;
 
-	private WTableDirEditor docTypePick;
 	private WTableDirEditor pricelistPick;
-	private WTableDirEditor organizationPick;
+	private WTableDirEditor fldOR;
 	private WTableDirEditor fldPL;
 	private WTableDirEditor fldWH;
 	private WTableDirEditor fldSR;
 	private WTableDirEditor flUOM;
+	private WTableDirEditor fldDT;
+
+	int AD_Org_ID = 0;
+	int C_DocType_ID = 0;
+	int C_BPartner_ID = 0;
+	int M_Warehouse_ID = 0;
+	int M_PriceList_ID = 0;
+	int SalesRep_ID = 0;
 
 	WSearchEditor fldBP;
 	WSearchEditor fldPR;
 
-	int C_BPartner_ID = 0;
-	int C_DocType_ID = 0;
-	int M_Warehouse_ID = 0;
-	int M_PriceList_ID = 0;
+	int COLUMNNAME_QTY = 2;
+	int COLUMNNAME_PRICE = 4;
+
+	private WTableDirEditor docTypePick;
+
+	public Label getLbldocumentNo() {
+		return lbldocumentNo;
+	}
+
+	public void setLbldocumentNo(Label lbldocumentNo) {
+		this.lbldocumentNo = lbldocumentNo;
+	}
+
+	public int getAD_Org_ID() {
+		return AD_Org_ID;
+	}
+
+	public void setAD_Org_ID(int aD_Org_ID) {
+		AD_Org_ID = aD_Org_ID;
+	}
+
+	public int getC_BPartner_ID() {
+		return C_BPartner_ID;
+	}
+
+	public void setC_BPartner_ID(int c_BPartner_ID) {
+		C_BPartner_ID = c_BPartner_ID;
+	}
+
+	public int getC_DocType_ID() {
+		return C_DocType_ID;
+	}
+
+	public void setC_DocType_ID(int c_DocType_ID) {
+		C_DocType_ID = c_DocType_ID;
+	}
+
+	public int getM_Warehouse_ID() {
+		return M_Warehouse_ID;
+	}
+
+	public void setM_Warehouse_ID(int m_Warehouse_ID) {
+		M_Warehouse_ID = m_Warehouse_ID;
+	}
+
+	public int getM_PriceList_ID() {
+		return M_PriceList_ID;
+	}
+
+	public void setM_PriceList_ID(int m_PriceList_ID) {
+		M_PriceList_ID = m_PriceList_ID;
+	}
+
+	public int getSalesRep_ID() {
+		return SalesRep_ID;
+	}
+
+	public void setSalesRep_ID(int salesRep_ID) {
+		SalesRep_ID = salesRep_ID;
+	}
+
 	BigDecimal priceActual = Env.ZERO;
 	BigDecimal qtyEntered = Env.ONE;
 
 	private MProduct product;
-
-	Listbox fldDT = new Listbox();
 
 	Properties ctx = Env.getCtx();
 
@@ -175,9 +240,12 @@ public class WPos extends CustomForm
 		this.tLine1 = new Hbox();
 		this.tLine2 = new Hbox();
 		this.tLineButtons = new Hbox();
+
 		this.dataTable = ListboxFactory.newDataTable();
+
 		this.productLabel = new Label();
 		this.productTextBox = new Textbox();
+
 		this.bPartnerLabel = new Label();
 		this.doctypeLabel = new Label();
 		this.priceListLabel = new Label();
@@ -219,10 +287,10 @@ public class WPos extends CustomForm
 		this.lookupBP = null;
 
 		try {
-
 			this.dynInit();
 			this.zkInit();
 			this.addEventListener("onPayment", (EventListener) this);
+			this.dataTable.addEventListener("onChange", (EventListener) this);
 
 		}
 
@@ -257,15 +325,15 @@ public class WPos extends CustomForm
 			AD_Column_ID = 2163;
 			MLookup lookupOrg = MLookupFactory.get(Env.getCtx(), this.getWindowNo(), 0, AD_Column_ID,
 					DisplayType.TableDir);
-			organizationPick = new WTableDirEditor("AD_Org_ID", true, false, true, lookupOrg);
-			organizationPick.setValue(Env.getAD_Org_ID(Env.getCtx()));
-			organizationPick.addValueChangeListener(this);
+			fldOR = new WTableDirEditor("AD_Org_ID", true, false, true, lookupOrg);
+			fldOR.setValue(Env.getAD_Org_ID(Env.getCtx()));
+			fldOR.addValueChangeListener(this);
 
 			// DocType
 			AD_Column_ID = 2172;
 			MLookup lookupDT = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.TableDir);
-			docTypePick = new WTableDirEditor(MOrder.COLUMNNAME_C_DocType_ID, true, false, true, lookupDT);
-			docTypePick.addValueChangeListener(this);
+			fldDT = new WTableDirEditor(MOrder.COLUMNNAME_C_DocType_ID, true, false, true, lookupDT);
+			fldDT.addValueChangeListener(this);
 
 			// PriceList
 			AD_Column_ID = 2204;
@@ -302,32 +370,11 @@ public class WPos extends CustomForm
 		}
 	}
 
-	private void loadLines(MProduct product) throws IOException {
-
-		Vector<String> columnNames = com.ingeint.pos.forms.OrderLines.getColumnNames();
-		Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product, M_PriceList_ID);
-
-		ListModelTable modelOl = new ListModelTable(data);
-		modelOl.addTableModelListener(this);
-		dataTable.getModel().removeTableModelListener(this);
-		dataTable.setData(modelOl, columnNames);
-		log.warning("Registros: " + dataTable.getRows());
-
-	}
-
+	@SuppressWarnings("unchecked")
 	private void zkInit() throws Exception {
 
-		final String borderStyle = "border: 1px solid #C0C0C0; border-radius:5px;";
-		final String borderStyle2 = "border: 1px solid #C0C0C0; border-radius:5px;";
-		final String totalStyle = "background:#7c7bad;Height:35px;Width:160px;border: 3px solid #D2D2FF;border-radius:8px;padding: 1px 1px;font-family: Arial, Helvetica, sans-serif;font-size: 16px;font-weight: normal; letter-spacing:0.1em; color: white";
-		final String columnStyle = "font-size: 12px;font-weight:bold; color: black; ";
-		final String labelStyle = "border: 0px solid #C0C0C0; border-radius:5px;font-size: 28px;font-weight: bolder; background:#ffffff; text-align: left;";
+		Styles st = new Styles();
 
-		final String buttonTomato = "background:#7c7bad;Height:35px;Width:160px;border: 3px solid #D2D2FF;border-radius:8px;padding: 1px 1px;font-family: Arial, Helvetica, sans-serif;font-size: 12px;font-weight: normal; letter-spacing:0.1em; color: white";
-		final String buttonYellow = "background:yellow;Height:35px;Width:200px;border: 3px solid#5b5a91;border-radius:8px;padding: 1px 1px;font-family: Arial, Helvetica, sans-serif;font-size: 12px;font-weight: bolder;color: black";
-		final String rowStyle = "Height:30px; border-style: dotted;";
-		final String spacing1 = "30rem";
-		final String spacing2 = "120rem";
 		ZKUpdateUtil.setVflex((HtmlBasedComponent) this.mainLayout, "1");
 		ZKUpdateUtil.setHflex((HtmlBasedComponent) this.mainLayout, "1");
 		this.mainLayout.setParent((Component) this);
@@ -342,24 +389,24 @@ public class WPos extends CustomForm
 		this.pcustLayout.setBorder("normal");
 		this.pcustLayout.setHflex("1");
 		this.pcustLayout.setVflex("7");
-		this.pcustLayout.setStyle(borderStyle);
+		this.pcustLayout.setStyle(st.getBorderStyle());
 		this.pprodLayout.setBorder("normal");
 		this.pprodLayout.setHflex("1");
 		this.pprodLayout.setVflex("2");
-		this.pprodLayout.setStyle(borderStyle);
+		this.pprodLayout.setStyle(st.getBorderStyle());
 		this.pgLayout.setBorder("normal");
-		this.pgLayout.setStyle(borderStyle);
+		this.pgLayout.setStyle(st.getBorderStyle());
 		this.pgLayout.setVflex("13");
 		this.pgLayout.setHflex("1");
 		this.pbarLayout.setBorder("normal");
-		this.pbarLayout.setStyle(borderStyle2);
+		this.pbarLayout.setStyle(st.getBorderStyle2());
 		this.ptotalLayout.setBorder("normal");
-		this.ptotalLayout.setStyle(borderStyle);
+		this.ptotalLayout.setStyle(st.getBorderStyle());
 		this.ptotalLayout.setLeft("1px");
 		this.ptotalLayout.setHflex("1");
 		this.ptotalLayout.setVflex("4");
 		this.custLayout.setAlign("left");
-		this.custLayout.setWidth("99%");
+		this.custLayout.setWidth("100%");
 		(this.custRows = this.custLayout.newRows()).setHeight("20px");
 		this.prodLayout.setAlign("left");
 		this.prodLayout.setWidths("4%,18%,60%,5%,5%,5%");
@@ -375,8 +422,6 @@ public class WPos extends CustomForm
 		this.totalLayout.setAlign("left");
 		this.totalLayout.setWidth("99%");
 		this.tLine1.setWidth("99%");
-		this.prodLayout.setWidths("4%,18%,63%,5%,5%,5%");
-
 		this.tLine1.setWidths("50%,5%,35%,10%,10%,10%,10%");
 		this.tLine2.setWidth("99%");
 		this.tLine2.setWidths("20%,5%,10%,5%,10%,10%,20%");
@@ -418,26 +463,24 @@ public class WPos extends CustomForm
 
 		this.btnSave.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "save")).toString());
 		this.btnSave.addActionListener((EventListener) this);
-		this.btnSave.setStyle(buttonTomato);
+		this.btnSave.setStyle(st.getBigButtomStyle());
 
 		this.btnDiscart.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Discart")).toString());
 		this.btnDiscart.addActionListener((EventListener) this);
-		this.btnDiscart.setStyle(buttonTomato);
+		this.btnDiscart.setStyle(st.getBigButtomStyle());
 
 		this.btnProcess.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Process")).toString());
 		this.btnProcess.addActionListener((EventListener) this);
-		this.btnProcess.setStyle(buttonTomato);
+		this.btnProcess.setStyle(st.getBigButtomStyle());
 
 		this.btnPrint.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Print")).toString());
 		this.btnPrint.addActionListener((EventListener) this);
-		this.btnPrint.setStyle(buttonTomato);
+		this.btnPrint.setStyle(st.getBigButtomStyle());
 
 		final Hbox cbuttons = new Hbox();
-		this.payButton.setStyle(buttonTomato);
+		this.payButton.setStyle(st.getBigButtomStyle());
 		this.payButton.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_Payment_ID")).toString());
 		this.payButton.addActionListener((EventListener) this);
-
-		this.bpartnerTextBox.addEventListener("onBlur", (EventListener) this);
 
 		Row row = this.custRows.newRow();
 
@@ -453,14 +496,14 @@ public class WPos extends CustomForm
 
 		// Organization
 		row.appendChild((Component) new Space());
-		organizationLabel.setStyle(columnStyle);
+		organizationLabel.setStyle(st.getColumnStyle());
 		row.appendCellChild(organizationLabel);
-		row.appendCellChild(organizationPick.getComponent(), 2);
+		row.appendCellChild(fldOR.getComponent(), 2);
 
 		row = this.custRows.newRow(); // enter
 
 		// this.bPartnerLabel.setWidth("100%");
-		this.bPartnerLabel.setStyle(columnStyle);
+		this.bPartnerLabel.setStyle(st.getColumnStyle());
 		row.appendCellChild(this.bPartnerLabel);
 		row.appendCellChild(fldBP.getComponent(), 2);
 
@@ -469,25 +512,25 @@ public class WPos extends CustomForm
 		row.appendChild((Component) new Space());
 
 		// DateOrdered
-		this.lblDateScheduled.setStyle(columnStyle);
+		this.lblDateScheduled.setStyle(st.getColumnStyle());
 		row.appendChild(this.lblDateScheduled);
 		row.appendChild((Component) this.dateScheduled.getComponent());
 
 		row = this.custRows.newRow(); // enter
 
 		// DocType
-		doctypeLabel.setStyle(columnStyle);
+		doctypeLabel.setStyle(st.getColumnStyle());
 		row.appendCellChild(doctypeLabel);
-		ZKUpdateUtil.setHflex(docTypePick.getComponent(), "true");
-		row.appendCellChild(docTypePick.getComponent(), 2);
+		ZKUpdateUtil.setHflex(fldDT.getComponent(), "true");
+		row.appendCellChild(fldDT.getComponent(), 2);
 
 		row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
 
-		lbldocumentNo.setStyle(columnStyle);
+		lbldocumentNo.setStyle(st.getColumnStyle());
 		row.appendCellChild(lbldocumentNo);
-		documentNo.setStyle(labelStyle);
+		documentNo.setStyle(st.getLabelStype());
 		ZKUpdateUtil.setHflex(documentNo, "true");
 		documentNo.setLeft("0%");
 		row.appendCellChild(documentNo, 2);
@@ -495,8 +538,8 @@ public class WPos extends CustomForm
 
 		row = this.custRows.newRow(); // enter
 
-		// PriceList
-		priceListLabel.setStyle(columnStyle);
+		// PriceListtrx
+		priceListLabel.setStyle(st.getColumnStyle());
 		row.appendCellChild(priceListLabel);
 		ZKUpdateUtil.setHflex(fldPL.getComponent(), "true");
 		row.appendCellChild(fldPL.getComponent(), 2);
@@ -505,14 +548,14 @@ public class WPos extends CustomForm
 		row.appendChild((Component) new Space());
 
 		// SalesRep
-		lblSalesRep.setStyle(columnStyle);
+		lblSalesRep.setStyle(st.getColumnStyle());
 		row.appendCellChild(lblSalesRep);
 		row.appendCellChild(fldSR.getComponent(), 2);
 
 		row = this.custRows.newRow(); // enter
 
 		// Warehouse
-		warehouseLabel.setStyle(columnStyle);
+		warehouseLabel.setStyle(st.getColumnStyle());
 		row.appendCellChild(warehouseLabel);
 		ZKUpdateUtil.setHflex(fldWH.getComponent(), "true");
 		row.appendCellChild(fldWH.getComponent(), 2);
@@ -521,12 +564,14 @@ public class WPos extends CustomForm
 		row = this.custRows.newRow(); // enter
 
 		// Products
-		this.productLabel.setStyle(columnStyle);
+		this.productLabel.setStyle(st.getColumnStyle());
 		ZKUpdateUtil.setHflex((HtmlBasedComponent) this.productLabel, "2");
 		prodLayout.appendChild((Component) productLabel);
-		this.productTextBox.setWidth("80px");
+		// this.productTextBox.setWidth("100%");
 		this.prodLayout.appendChild(fldPR.getComponent());
+		ZKUpdateUtil.setHflex(fldPR.getComponent(), "true");
 
+		prodLayout.appendChild((Component) new Space());
 		prodLayout.appendChild((Component) new Space());
 
 		// OrderLines
@@ -535,58 +580,58 @@ public class WPos extends CustomForm
 		this.dataTable.setClass(
 				"div.z-grid-header { background: none repeat scroll 0 0 #FFFFFF; border: 1px solid #CFCFCF; overflow: hidden; }");
 		this.barLayout.setWidth("250px");
-		this.dsLayout.setStyle(labelStyle);
+		this.dsLayout.setStyle(st.getLabelStype());
 
 		this.dsLayout.setAlign("end");
 		this.dctLabel.rightAlign();
-		this.dctLabel.setStyle(columnStyle);
+		this.dctLabel.setStyle(st.getLabelStype());
 		this.dsLayout.appendChild((Component) this.dctLabel);
 		this.dctDecimalbox.rightAlign();
-		ZkCssHelper.appendStyle((HtmlBasedComponent) this.dctDecimalbox, columnStyle);
+		ZkCssHelper.appendStyle((HtmlBasedComponent) this.dctDecimalbox, st.getLabelStype());
 		this.dsLayout.appendChild((Component) this.dctDecimalbox);
-		this.t1Layout.setStyle(labelStyle);
+		this.t1Layout.setStyle(st.getLabelStype());
 		this.t1Layout.setAlign("right");
 		this.subTotalLabel.rightAlign();
-		this.subTotalLabel.setStyle(columnStyle);
+		this.subTotalLabel.setStyle(st.getColumnStyle());
 		this.t1Layout.appendChild((Component) this.subTotalLabel);
 		this.subTotalDecimalbox.setWidth("150px");
 		this.subTotalDecimalbox.rightAlign();
 		// this.subTotalDecimalbox.setText(this.nf.format(0L));
-		this.subTotalDecimalbox.setStyle(columnStyle);
+		this.subTotalDecimalbox.setStyle(st.getColumnStyle());
 		this.t1Layout.appendChild((Component) this.subTotalDecimalbox);
 		this.t1Layout.setWidth("200px");
-		this.txLayout.setStyle(labelStyle);
+		this.txLayout.setStyle(st.getLabelStype());
 		this.txLayout.setAlign("end");
-		this.taxLabel.setStyle(columnStyle);
+		this.taxLabel.setStyle(st.getColumnStyle());
 		this.taxLabel.setWidth("150px");
 		this.txLayout.appendChild((Component) this.taxLabel);
 		this.taxDecimalbox.rightAlign();
 		// this.taxDecimalbox.setText(this.nf.format(0L));
-		ZkCssHelper.appendStyle((HtmlBasedComponent) this.taxDecimalbox, columnStyle);
+		ZkCssHelper.appendStyle((HtmlBasedComponent) this.taxDecimalbox, st.getColumnStyle());
 		this.txLayout.appendChild((Component) this.taxDecimalbox);
 		this.txLayout.setWidth("200px");
-		this.t2Layout.setStyle(columnStyle);
+		this.t2Layout.setStyle(st.getColumnStyle());
 		this.t2Layout.setAlign("center");
-		this.totalLabel.setStyle(totalStyle);
+		this.totalLabel.setStyle(st.getTotalStyle());
 		this.t2Layout.appendChild((Component) this.totalLabel);
 		// this.totalDecimalbox.setText(this.nf.format(0L));
-		this.totalDecimalbox.setStyle(totalStyle);
+		this.totalDecimalbox.setStyle(st.getTotalStyle());
 		this.t2Layout.appendChild((Component) this.totalDecimalbox);
 		this.t2Layout.setWidth("200px");
 		this.t2Layout.setHeight("30px");
-		this.tLine1.setStyle(rowStyle);
+		this.tLine1.setStyle(st.getRowStyle());
 		this.tLine1.setAlign("right");
-		this.tLine1.setSpacing(spacing1);
+		this.tLine1.setSpacing(st.getSpacing1());
 		this.tLine1.appendChild((Component) this.dsLayout);
 		this.tLine1.appendChild((Component) this.t1Layout);
-		this.tLine2.setStyle(rowStyle);
+		this.tLine2.setStyle(st.getRowStyle());
 		this.tLine2.setAlign("right");
-		this.tLine2.setSpacing(spacing2);
+		this.tLine2.setSpacing(st.getSpacing2());
 		this.tLine2.appendChild((Component) this.txLayout);
 		this.tLine2.appendChild((Component) this.t2Layout);
-		this.tLineButtons.setStyle(rowStyle);
+		this.tLineButtons.setStyle(st.getRowStyle());
 		this.tLineButtons.setAlign("right");
-		this.tLineButtons.setSpacing(spacing2);
+		this.tLineButtons.setSpacing(st.getSpacing1());
 		this.tLineButtons.appendChild((Component) this.barLayout);
 		this.tLineButtons.appendChild((Component) this.payButton);
 		this.tLineButtons.appendChild((Component) this.cancelButton);
@@ -596,13 +641,65 @@ public class WPos extends CustomForm
 				dataTableOnDoubleClick();
 			}
 		});
+	}
 
-		// this.bPartnerLabel.setClass("menu-href z-a");
+	private void createLines(MProduct product) throws IOException {
 
+		Vector<String> columnNames = com.ingeint.pos.forms.OrderLines.getColumnNames();
+		Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product, M_PriceList_ID);
+
+		if (isNew) {
+			modelOl = new ListModelTable(data);
+			dataTable.setData(modelOl, columnNames);
+			log.warning("Registros: " + dataTable.getRows());
+			modelOl.addTableModelListener(this);
+			dataTable.getModel().addTableModelListener(this);
+			log.warning("Registros: " + dataTable.getRows());
+
+		} else {
+			modelOl.addAll(data);
+		}
 	}
 
 	@Override
 	public void valueChange(ValueChangeEvent evt) {
+
+		if (evt.getPropertyName().equals(MOrderLine.COLUMNNAME_M_Product_ID)) {
+
+			// New Order
+			if (isNew) {
+				CreateUpdateOrder co = new CreateUpdateOrder();
+				MOrder newOrder = co.createUpdateOrder(0, this, "trx");
+
+				documentNo.setText(newOrder.getDocumentNo());
+			}
+
+			if (evt.getNewValue() != null) {
+				MProduct product = new MProduct(ctx, (Integer.valueOf(evt.getNewValue().toString())), null);
+				try {
+					createLines(product);
+
+					com.ingeint.pos.forms.OrderLines.setTableColumnClass((IMiniTable) this.dataTable);
+					if (isNew) {
+						com.ingeint.pos.util.Utils.setWidths(this.dataTable.getListHead(), "3", "20", "6", "6", "6",
+								"6", "6");
+					}
+					isNew = false;
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		if (evt.getPropertyName().equals(MOrder.COLUMNNAME_AD_Org_ID)) {
+			if (evt.getNewValue() != null) {
+				AD_Org_ID = ((Integer) evt.getNewValue()).intValue();
+				fldOR.setValue(AD_Org_ID);
+			} else {
+				AD_Org_ID = 0;
+				fldOR.setValue(null);
+			}
+		}
 
 		if (evt.getPropertyName().equals(MOrder.COLUMNNAME_C_BPartner_ID)) {
 			if (evt.getNewValue() != null) {
@@ -617,10 +714,7 @@ public class WPos extends CustomForm
 		if (evt.getPropertyName().equals(MOrder.COLUMNNAME_C_DocType_ID)) {
 			if (evt.getNewValue() != null) {
 				C_DocType_ID = ((Integer) evt.getNewValue()).intValue();
-				fldDT = new Listbox();
 				fldDT.setValue(C_DocType_ID);
-				// TODO Obtain the documentNo From C_Order
-				this.documentNo.setText("SO0183");
 			} else {
 				C_DocType_ID = 0;
 				fldDT.setValue(null);
@@ -647,40 +741,24 @@ public class WPos extends CustomForm
 			}
 		}
 
-		if (evt.getPropertyName().contentEquals(MOrderLine.COLUMNNAME_QtyEntered)) {
+		if (evt.getPropertyName().equals(MOrder.COLUMNNAME_SalesRep_ID)) {
 			if (evt.getNewValue() != null) {
-				qtyEntered = new BigDecimal(evt.getNewValue().toString());
+				SalesRep_ID = ((Integer) evt.getNewValue()).intValue();
+				fldSR.setValue(SalesRep_ID);
 			} else {
-				qtyEntered = Env.ONE;
+				SalesRep_ID = 0;
+				fldSR.setValue(null);
 			}
 		}
 
-		if (evt.getPropertyName().contentEquals(MOrderLine.COLUMNNAME_M_Product_ID)) {
-			if (evt.getNewValue() != null) {
-				MProduct product = new MProduct(ctx, (Integer.valueOf(evt.getNewValue().toString())), null);
-				try {
-					loadLines(product);
-					fldPR.setValue(null);
-					fldPR.setReadWrite(true);
-
-					if (isNew) {
-						com.ingeint.pos.util.Utils.setWidths(this.dataTable.getListHead(), "4", "26", "8", "8", "8",
-								"8", "8");
-						com.ingeint.pos.forms.OrderLines.setTableColumnClass((IMiniTable) this.dataTable);
-						isNew = false;
-					}
-					
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
+		fldPR.setValue(null);
 	}
 
 	private void dataTableOnDoubleClick() {
 
 		final Integer index = this.dataTable.getSelectedIndex();
-		
+		log.warning("estoy en:" + index);
+
 	}
 
 	@Override
@@ -689,6 +767,7 @@ public class WPos extends CustomForm
 		boolean isUpdate = (event.getType() == WTableModelEvent.CONTENTS_CHANGED);
 		int column = event.getColumn();
 		int row = event.getLastRow();
+
 		// Is a table update
 
 		if (isUpdate) {
@@ -696,13 +775,13 @@ public class WPos extends CustomForm
 			// Render now
 			ListModelTable model = (ListModelTable) event.getModel();
 
-			if (column == 2) { // Updated QtyEntered
+			if (column == COLUMNNAME_QTY) { // Updated QtyEntered
 				BigDecimal qty = new BigDecimal(model.getDataAt(row, 2).toString());
 				qtyEntered = qty;
 
 			}
 
-			if (column == 4) { // Price updated
+			if (column == COLUMNNAME_PRICE) { // Price updated
 
 				BigDecimal price = new BigDecimal(model.getDataAt(row, 4).toString());
 				priceActual = price;

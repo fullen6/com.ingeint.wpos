@@ -1,28 +1,27 @@
 package com.ingeint.pos.forms;
 
 
-import org.compiere.model.MProduct;
-import java.util.LinkedList;
-import java.sql.Timestamp;
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
-import java.util.logging.Level;
-import java.util.Date;
-import org.compiere.util.DB;
-import java.text.SimpleDateFormat;
 import java.math.BigDecimal;
-import org.compiere.minigrid.IMiniTable;
-import org.compiere.util.Msg;
-import org.compiere.util.Env;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.LinkedList;
 import java.util.Vector;
+import java.util.logging.Level;
+
+import org.compiere.minigrid.IMiniTable;
 import org.compiere.util.CLogger;
+import org.compiere.util.DB;
+import org.compiere.util.Env;
+import org.compiere.util.Msg;
 
 public class SimplifiedSales {
 	public static CLogger log;
 
 	static {
-		SimplifiedSales.log = CLogger.getCLogger((Class) SimplifiedSales.class);
+		SimplifiedSales.log = CLogger.getCLogger(SimplifiedSales.class);
 	}
 
 	public Vector<String> getTableColumnNames() {
