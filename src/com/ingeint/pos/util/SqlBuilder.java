@@ -75,7 +75,7 @@ public class SqlBuilder {
 	 */
 	public SqlBuilder file(String path) throws IOException {
 		InputStream resourceAsStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
-
+		
 		if (resourceAsStream == null) {
 			throw new FileNotFoundException(path);
 		}

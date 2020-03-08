@@ -27,13 +27,14 @@ public class CreateUpdateOrder {
 		else
 			order = new MOrder(Env.getCtx(), 0, p_TrxName);
 
+		order.setIsSOTrx(true);
 		order.setAD_Org_ID(wp.getAD_Org_ID());
 		order.setC_BPartner_ID(wp.getC_BPartner_ID());
 		order.setC_DocTypeTarget_ID(wp.getC_DocType_ID());
-		order.setM_PriceList_ID(wp.getM_PriceList_ID());
 		order.setM_Warehouse_ID(wp.getM_Warehouse_ID());
 		order.setSalesRep_ID(wp.getSalesRep_ID());
-
+		order.setM_PriceList_ID(wp.getM_PriceList_ID());
+	
 		order.saveEx();
 
 		try {

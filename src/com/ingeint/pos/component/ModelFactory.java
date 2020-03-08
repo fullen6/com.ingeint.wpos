@@ -19,6 +19,7 @@
 package com.ingeint.pos.component;
 
 import com.ingeint.pos.base.CustomModelFactory;
+import com.ingeint.pos.model.MCustomPOS;
 
 /**
  * Model Factory
@@ -36,6 +37,7 @@ public class ModelFactory extends CustomModelFactory {
 	 */
 	@Override
 	protected void initialize() {
+		registerModel(MCustomPOS.Table_Name, MCustomPOS.class);
 	}
 
 }

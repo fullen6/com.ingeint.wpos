@@ -7,7 +7,9 @@ import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Level;
 
+import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.webui.component.Button;
+import org.adempiere.webui.component.DocumentLink;
 import org.adempiere.webui.component.Grid;
 import org.adempiere.webui.component.GridFactory;
 import org.adempiere.webui.component.Label;
@@ -50,6 +52,7 @@ import org.zkoss.zul.Window;
 
 import com.ingeint.pos.base.CustomForm;
 import com.ingeint.pos.functions.CreateUpdateOrder;
+import com.ingeint.pos.model.MCustomPOS;
 import com.ingeint.pos.util.Styles;
 
 public class WPos extends CustomForm
@@ -137,12 +140,22 @@ public class WPos extends CustomForm
 	private WTableDirEditor flUOM;
 	private WTableDirEditor fldDT;
 
+	DocumentLink lkOrder;
+
+	MOrder newOrder;
+
 	int AD_Org_ID = 0;
 	int C_DocType_ID = 0;
 	int C_BPartner_ID = 0;
 	int M_Warehouse_ID = 0;
 	int M_PriceList_ID = 0;
 	int SalesRep_ID = 0;
+	int M_Product_ID = 0;
+
+	Properties ctx = Env.getCtx();
+	int LoginAD_User_ID = Env.getAD_User_ID(ctx);
+	int LoginAD_Client_ID = Env.getAD_Client_ID(ctx);
+	int LoginAD_Org_ID = Env.getAD_Org_ID(ctx);
 
 	WSearchEditor fldBP;
 	WSearchEditor fldPR;
@@ -150,7 +163,7 @@ public class WPos extends CustomForm
 	int COLUMNNAME_QTY = 2;
 	int COLUMNNAME_PRICE = 4;
 
-	private WTableDirEditor docTypePick;
+	MCustomPOS pos = MCustomPOS.getbyUser(LoginAD_Client_ID, LoginAD_Org_ID, LoginAD_User_ID);
 
 	public Label getLbldocumentNo() {
 		return lbldocumentNo;
@@ -213,12 +226,22 @@ public class WPos extends CustomForm
 
 	private MProduct product;
 
-	Properties ctx = Env.getCtx();
-
 	@Override
 	protected void initForm() {
 
-		Env.setContext(Env.getCtx(), this.m_WindowNo, "IsSOTrx", "Y");
+		lkOrder = new DocumentLink("", MOrder.Table_ID, 0);
+
+		if (pos == null)
+			throw new AdempiereException("El Usuario posee un terminal POS ");
+
+		setAD_Org_ID(pos.getAD_Org_ID());
+		setC_BPartner_ID(pos.getC_BPartnerCashTrx_ID());
+		setC_DocType_ID(pos.getC_DocType_ID());
+		setM_Warehouse_ID(pos.getM_Warehouse_ID());
+		setM_PriceList_ID(pos.getM_PriceList_ID());
+		setSalesRep_ID(pos.getSalesRep_ID());
+
+		refreshContext();
 
 		this.mainLayout = new Window();
 		this.vmainLayout = new Vbox();
@@ -303,16 +326,39 @@ public class WPos extends CustomForm
 
 	}
 
+	private void refreshContext() {
+
+		Env.setContext(ctx, this.m_WindowNo, "M_PriceList_ID", getM_PriceList_ID());
+		Env.setContext(ctx, this.getWindowNo(), "M_Warehouse_ID", getM_Warehouse_ID());
+		Env.setContext(Env.getCtx(), this.m_WindowNo, "IsSOTrx", "Y");
+
+	}
+
 	private void dynInit() throws Exception {
 
 		try {
 
+			// Organization
+			int AD_Column_ID = 2163;
+			MLookup lookupOrg = MLookupFactory.get(Env.getCtx(), this.getWindowNo(), 0, AD_Column_ID,
+					DisplayType.TableDir);
+			fldOR = new WTableDirEditor("AD_Org_ID", true, false, true, lookupOrg);
+			fldOR.setValue(Env.getAD_Org_ID(Env.getCtx()));
+			fldOR.addValueChangeListener(this);
+
+			fldOR.setValue(getAD_Org_ID());
+
 			// BPartner
-			int AD_Column_ID = 2893;
+			AD_Column_ID = 2893;
 			lookupBP = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.Search);
 			fldBP = new WSearchEditor(MOrder.COLUMNNAME_C_BPartner_ID, true, false, true, lookupBP);
 			fldBP.addValueChangeListener(this);
 			fldBP.setReadWrite(true);
+
+			if (pos.getC_BPartnerCashTrx_ID() > 0) {
+				fldBP.setValue(getC_BPartner_ID());
+				C_BPartner_ID = (Integer) fldBP.getValue();
+			}
 
 			// Product
 			AD_Column_ID = 1402;
@@ -321,19 +367,13 @@ public class WPos extends CustomForm
 			fldPR.addValueChangeListener(this);
 			fldPR.setReadWrite(true);
 
-			// Organization
-			AD_Column_ID = 2163;
-			MLookup lookupOrg = MLookupFactory.get(Env.getCtx(), this.getWindowNo(), 0, AD_Column_ID,
-					DisplayType.TableDir);
-			fldOR = new WTableDirEditor("AD_Org_ID", true, false, true, lookupOrg);
-			fldOR.setValue(Env.getAD_Org_ID(Env.getCtx()));
-			fldOR.addValueChangeListener(this);
-
 			// DocType
 			AD_Column_ID = 2172;
 			MLookup lookupDT = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.TableDir);
 			fldDT = new WTableDirEditor(MOrder.COLUMNNAME_C_DocType_ID, true, false, true, lookupDT);
 			fldDT.addValueChangeListener(this);
+
+			fldDT.setValue(getC_DocType_ID());
 
 			// PriceList
 			AD_Column_ID = 2204;
@@ -341,17 +381,23 @@ public class WPos extends CustomForm
 			fldPL = new WTableDirEditor(MOrder.COLUMNNAME_M_PriceList_ID, true, false, true, lookupPL);
 			fldPL.addValueChangeListener(this);
 
+			fldPL.setValue(getM_PriceList_ID());
+
 			// Warehouse
 			AD_Column_ID = 1151;
 			MLookup lookupWH = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.TableDir);
 			fldWH = new WTableDirEditor(MOrder.COLUMNNAME_M_Warehouse_ID, true, false, true, lookupWH);
 			fldWH.addValueChangeListener(this);
 
+			fldWH.setValue(getM_Warehouse_ID());
+
 			// SalesRep_ID
 			AD_Column_ID = 2186;
 			MLookup lookupSR = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.TableDir);
 			fldSR = new WTableDirEditor(MOrder.COLUMNNAME_SalesRep_ID, true, false, true, lookupSR);
 			fldSR.addValueChangeListener(this);
+
+			fldSR.setValue(getSalesRep_ID());
 
 			// UOM
 			AD_Column_ID = 2222;
@@ -505,7 +551,10 @@ public class WPos extends CustomForm
 		// this.bPartnerLabel.setWidth("100%");
 		this.bPartnerLabel.setStyle(st.getColumnStyle());
 		row.appendCellChild(this.bPartnerLabel);
+		this.bPartnerLabel.setMandatory(true);
+		fldBP.setMandatory(true);
 		row.appendCellChild(fldBP.getComponent(), 2);
+		fldBP.showMenu();
 
 		row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
@@ -530,10 +579,10 @@ public class WPos extends CustomForm
 
 		lbldocumentNo.setStyle(st.getColumnStyle());
 		row.appendCellChild(lbldocumentNo);
-		documentNo.setStyle(st.getLabelStype());
-		ZKUpdateUtil.setHflex(documentNo, "true");
-		documentNo.setLeft("0%");
-		row.appendCellChild(documentNo, 2);
+		lkOrder.setStyle(st.getLabelStype());
+		ZKUpdateUtil.setHflex(lkOrder, "true");
+		lkOrder.setLeft("0%");
+		row.appendCellChild(lkOrder, 2);
 		row.appendChild((Component) new Space());
 
 		row = this.custRows.newRow(); // enter
@@ -643,10 +692,12 @@ public class WPos extends CustomForm
 		});
 	}
 
-	private void createLines(MProduct product) throws IOException {
+	public void createLines(MProduct product, MOrder order) throws IOException {
+
+		M_Product_ID = product.getM_Product_ID();
 
 		Vector<String> columnNames = com.ingeint.pos.forms.OrderLines.getColumnNames();
-		Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product, M_PriceList_ID);
+		Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product, M_PriceList_ID, newOrder);
 
 		if (isNew) {
 			modelOl = new ListModelTable(data);
@@ -655,6 +706,8 @@ public class WPos extends CustomForm
 			modelOl.addTableModelListener(this);
 			dataTable.getModel().addTableModelListener(this);
 			log.warning("Registros: " + dataTable.getRows());
+			Object obj = new Object[] {0,6};
+			modelOl.removeFromSelection(7);
 
 		} else {
 			modelOl.addAll(data);
@@ -669,15 +722,17 @@ public class WPos extends CustomForm
 			// New Order
 			if (isNew) {
 				CreateUpdateOrder co = new CreateUpdateOrder();
-				MOrder newOrder = co.createUpdateOrder(0, this, "trx");
+				newOrder = co.createUpdateOrder(0, this, null);
 
-				documentNo.setText(newOrder.getDocumentNo());
+				lkOrder.setLabel(newOrder.getDocumentNo());
+				lkOrder.setRecordId(newOrder.get_ID());
+
 			}
 
 			if (evt.getNewValue() != null) {
 				MProduct product = new MProduct(ctx, (Integer.valueOf(evt.getNewValue().toString())), null);
 				try {
-					createLines(product);
+					createLines(product, newOrder);
 
 					com.ingeint.pos.forms.OrderLines.setTableColumnClass((IMiniTable) this.dataTable);
 					if (isNew) {
@@ -751,7 +806,7 @@ public class WPos extends CustomForm
 			}
 		}
 
-		fldPR.setValue(null);
+		refreshContext();
 	}
 
 	private void dataTableOnDoubleClick() {
@@ -779,16 +834,24 @@ public class WPos extends CustomForm
 				BigDecimal qty = new BigDecimal(model.getDataAt(row, 2).toString());
 				qtyEntered = qty;
 
+				BigDecimal price = new BigDecimal(model.getDataAt(row, 4).toString());
+				priceActual = price;
+
+				model.setDataAt(priceActual.multiply(qtyEntered), row, 6);
+
 			}
 
 			if (column == COLUMNNAME_PRICE) { // Price updated
 
 				BigDecimal price = new BigDecimal(model.getDataAt(row, 4).toString());
 				priceActual = price;
+
 				model.setDataAt(priceActual.multiply(qtyEntered), row, 6);
-
+				
 			}
-
+			
+			int C_OrderLine_ID = (int) model.getDataAt(row, 7);
+			log.warning("ID De Linea :"+C_OrderLine_ID);
 		}
 	}
 }
