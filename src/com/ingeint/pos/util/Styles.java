@@ -72,5 +72,13 @@ public class Styles {
 		return spacing2;
 		
 	}	
-
+	
+	public String getFONTSIZELARGE() {
+	
+	/** Default Font Size Large */
+	final String FONTSIZELARGE = "Font-size:large;";
+		return FONTSIZELARGE;
+	
+	}
+	
 }

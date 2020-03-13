@@ -1,5 +1,6 @@
 package com.ingeint.pos.forms;
 
+import java.awt.Button;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -17,7 +18,7 @@ import org.compiere.util.Env;
 import org.compiere.util.Msg;
 
 public class OrderLines {
-	
+
 	/** Logger */
 	public static final CLogger log = CLogger.getCLogger(OrderLines.class);
 
@@ -36,6 +37,7 @@ public class OrderLines {
 		columnNames.add(Msg.translate(Env.getCtx(), MOrderLine.COLUMNNAME_C_Tax_ID));
 		columnNames.add(Msg.translate(Env.getCtx(), MOrderLine.COLUMNNAME_LineNetAmt));
 		columnNames.add(Msg.translate(Env.getCtx(), MOrderLine.COLUMNNAME_C_OrderLine_ID));
+		columnNames.add(Msg.translate(Env.getCtx(), MOrder.COLUMNNAME_DocAction));
 
 		return columnNames;
 	}
@@ -51,6 +53,7 @@ public class OrderLines {
 		table.setColumnClass(i++, (Class) BigDecimal.class, true);
 		table.setColumnClass(i++, (Class) BigDecimal.class, true);
 		table.setColumnClass(i++, (Class) Integer.class, true);
+		table.setColumnClass(i++, (Class) Button.class, true);
 
 		table.autoSize();
 
@@ -65,8 +68,12 @@ public class OrderLines {
 		BigDecimal taxAmt = oline.getPriceEntered().multiply((oline.getC_Tax().getRate().divide(Env.ONEHUNDRED)));
 		taxAmt = taxAmt.round(new MathContext(5));
 		taxAmt = taxAmt.setScale(2, RoundingMode.HALF_UP);
-		
-		
+
+		Button btn = new Button();
+		btn.setName("Delete");
+		btn.setEnabled(true);
+		btn.setLabel("Delete");
+
 		Vector<Vector<Object>> data = new Vector<Vector<Object>>();
 		Vector<Object> line = new Vector<Object>();
 		line.add(true);
@@ -78,11 +85,12 @@ public class OrderLines {
 		line.add(taxAmt);
 		line.add(priceEntered);
 		line.add(oline.getC_OrderLine_ID());
+		line.add(btn.getComponentAt(2, 2));
 		data.add(line);
 
 		return data;
 	}
-	
+
 	private static MOrderLine createOrderLine(MOrder order, int M_Product_ID) {
 
 		MOrderLine oline = new MOrderLine(null, 0, null);

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -15,7 +16,9 @@ import org.adempiere.webui.component.Grid;
 import org.adempiere.webui.component.GridFactory;
 import org.adempiere.webui.component.Label;
 import org.adempiere.webui.component.ListModelTable;
+import org.adempiere.webui.component.Listbox;
 import org.adempiere.webui.component.ListboxFactory;
+import org.adempiere.webui.component.NumberBox;
 import org.adempiere.webui.component.Row;
 import org.adempiere.webui.component.Rows;
 import org.adempiere.webui.component.Textbox;
@@ -37,6 +40,7 @@ import org.compiere.model.MLookupFactory;
 import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
+import org.compiere.model.X_C_POSTenderType;
 import org.compiere.util.CLogger;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
@@ -142,7 +146,34 @@ public class WPos extends CustomForm
 	private WTableDirEditor fldSR;
 	private WTableDirEditor flUOM;
 	private WTableDirEditor fldDT;
-
+	
+	Styles st = null;
+	
+	//PAYMENT INFO
+	
+	Vector<Vector<Object>> dataPayment;
+	ArrayList<ArrayList<Object>> dataPaymentID;
+	Window selection;
+	Textbox txtTotalPayAmt;
+	NumberBox txtPayAmt;
+	Label lbRoutingNo;
+	Textbox txtRoutingNo;
+	Label lbLotNo;
+	Textbox txtLotNo;
+	WListbox lstPaymetSelect;
+	Button processButtonPayment;
+	Button okButtonPayment;
+	Label lbTotal;
+	Label vlTotal;
+				
+	Listbox fldTT;
+	X_C_POSTenderType TT;
+	int mTT = 0;
+	Rows rows = null;
+	Row row = null;
+	
+	//END PAYMENT INFO
+	
 	DocumentLink lkOrder;
 
 	MOrder newOrder;
@@ -165,6 +196,7 @@ public class WPos extends CustomForm
 
 	int COLUMNNAME_QTY = 2;
 	int COLUMNNAME_PRICE = 4;
+	int COLUMNNAME_DELETELINE = 8;
 
 	MCustomPOS pos = MCustomPOS.getbyUser(LoginAD_Client_ID, LoginAD_Org_ID, LoginAD_User_ID);
 
@@ -236,10 +268,10 @@ public class WPos extends CustomForm
 
 		if (LoginAD_Org_ID == 0)
 			throw new AdempiereException(Msg.translate(ctx, "Org0NotAllowed"));
-		
+
 		if (pos == null)
-			throw new AdempiereException(Msg.translate(ctx,"NoPOSForUser"));
-		
+			throw new AdempiereException(Msg.translate(ctx, "NoPOSForUser"));
+
 		setAD_Org_ID(pos.getAD_Org_ID());
 		setC_BPartner_ID(pos.getC_BPartnerCashTrx_ID());
 		setC_DocType_ID(pos.getC_DocType_ID());
@@ -410,8 +442,7 @@ public class WPos extends CustomForm
 			MLookup lookupUOM = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.Table);
 			flUOM = new WTableDirEditor(MOrderLine.COLUMNNAME_C_UOM_ID, true, false, true, lookupUOM);
 			flUOM.addValueChangeListener(this);
-			
-			
+
 			final Timestamp time = Env.getContextAsDate(Env.getCtx(), "#Date");
 			this.entryDate.setValue((Object) time);
 			this.dateScheduled.setValue((Object) time);
@@ -426,7 +457,7 @@ public class WPos extends CustomForm
 	@SuppressWarnings("unchecked")
 	private void zkInit() throws Exception {
 
-		Styles st = new Styles();
+		st = new Styles();
 
 		ZKUpdateUtil.setVflex((HtmlBasedComponent) this.mainLayout, "1");
 		ZKUpdateUtil.setHflex((HtmlBasedComponent) this.mainLayout, "1");
@@ -495,7 +526,7 @@ public class WPos extends CustomForm
 		this.bPartnerLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "customer")).toString());
 		this.bPartnerLabel
 				.setTooltiptext(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_BPartner_ID")).toString());
-		this.doctypeLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_DocType")).toString());
+		this.doctypeLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_DocType_ID")).toString());
 		this.organizationLabel
 				.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "Organization")).toString());
 		this.priceListLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "PriceList")).toString());
@@ -521,8 +552,9 @@ public class WPos extends CustomForm
 		this.btnExit.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Logout")).toString());
 		this.btnExit.addEventListener(Events.ON_CLICK, this);
 		this.btnExit.setStyle(st.getBigButtomStyle());
-		
-		this.btnPrint.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Print")).toString().replace("&", ""));
+
+		this.btnPrint
+				.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Print")).toString().replace("&", ""));
 		this.btnPrint.addEventListener(Events.ON_CLICK, this);
 		this.btnPrint.setStyle(st.getBigButtomStyle());
 
@@ -532,39 +564,51 @@ public class WPos extends CustomForm
 		this.payButton.addEventListener(Events.ON_CLICK, this);
 
 		Row row = this.custRows.newRow();
+		
+		row.appendChild((Component) new Space());
 
 		// Principal Buttons
 		this.btnSave.setWidth("80%");
-		row.appendCellChild((Component) this.btnSave,2);
-		
+		row.appendCellChild((Component) this.btnSave, 2);
+
 		this.btnExit.setWidth("80%");
-		row.appendCellChild((Component) this.btnExit,2);
-		
+		row.appendCellChild((Component) this.btnExit, 2);
+
 		this.btnPrint.setWidth("80%");
-		row.appendCellChild((Component) this.btnPrint,2);
+		row.appendCellChild((Component) this.btnPrint, 2);
 		
-		row = this.custRows.newRow(); // enter
-		
-		//row.appendChild((Component) new Space());
-		row.appendChild((Component) new Space());
-		row.appendChild((Component) new Space());
-		row.appendChild((Component) new Space());
-		row.appendChild((Component) new Space());
-		// Organization
-		row.appendChild((Component) new Space());
-		organizationLabel.setStyle(st.getColumnStyle());
-		row.appendCellChild(organizationLabel);
-		row.appendCellChild(fldOR.getComponent(), 4);
+		this.payButton.setWidth("80%");
+		row.appendCellChild((Component) this.payButton, 2);
 
 		row = this.custRows.newRow(); // enter
+
 
 		// this.bPartnerLabel.setWidth("100%");
+		row.appendChild((Component) new Space());
 		this.bPartnerLabel.setStyle(st.getColumnStyle());
 		row.appendCellChild(this.bPartnerLabel);
 		this.bPartnerLabel.setMandatory(true);
 		fldBP.setMandatory(true);
-		row.appendCellChild(fldBP.getComponent(), 2);
+		row.appendCellChild(fldBP.getComponent(), 3);
 		fldBP.showMenu();
+
+		// Organization
+
+		row.appendChild((Component) new Space());
+		row.appendChild((Component) new Space());
+		row.appendChild((Component) new Space());
+		organizationLabel.setStyle(st.getColumnStyle());
+		row.appendCellChild(organizationLabel);
+		row.appendCellChild(fldOR.getComponent(), 5);
+
+		row = this.custRows.newRow(); // enter
+
+		row.appendChild((Component) new Space());
+		// DocType
+		doctypeLabel.setStyle(st.getColumnStyle());
+		row.appendCellChild(doctypeLabel);
+		ZKUpdateUtil.setHflex(fldDT.getComponent(), "true");
+		row.appendCellChild(fldDT.getComponent(), 3);
 
 		row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
@@ -573,16 +617,18 @@ public class WPos extends CustomForm
 		// DateOrdered
 		this.lblDateScheduled.setStyle(st.getColumnStyle());
 		row.appendChild(this.lblDateScheduled);
-		row.appendCellChild((Component) this.dateScheduled.getComponent(),2);
+		row.appendCellChild((Component) this.dateScheduled.getComponent(), 3);
 
 		row = this.custRows.newRow(); // enter
 
-		// DocType
-		doctypeLabel.setStyle(st.getColumnStyle());
-		row.appendCellChild(doctypeLabel);
-		ZKUpdateUtil.setHflex(fldDT.getComponent(), "true");
-		row.appendCellChild(fldDT.getComponent(), 2);
 
+		row.appendChild((Component) new Space());
+		
+		// PriceListtrx
+		priceListLabel.setStyle(st.getColumnStyle());
+		row.appendCellChild(priceListLabel);
+		ZKUpdateUtil.setHflex(fldPL.getComponent(), "true");
+		row.appendCellChild(fldPL.getComponent(), 3);
 		row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
@@ -597,21 +643,15 @@ public class WPos extends CustomForm
 
 		row = this.custRows.newRow(); // enter
 
-		// PriceListtrx
-		priceListLabel.setStyle(st.getColumnStyle());
-		row.appendCellChild(priceListLabel);
-		ZKUpdateUtil.setHflex(fldPL.getComponent(), "true");
-		row.appendCellChild(fldPL.getComponent(), 2);
 		row.appendChild((Component) new Space());
-		row.appendChild((Component) new Space());
-		row.appendChild((Component) new Space());
-
 		// SalesRep
 		lblSalesRep.setStyle(st.getColumnStyle());
 		row.appendCellChild(lblSalesRep);
-		row.appendCellChild(fldSR.getComponent(), 2);
-
-		row = this.custRows.newRow(); // enter
+		row.appendCellChild(fldSR.getComponent(), 3);
+		
+		row.appendCellChild((Component) new Space());
+		row.appendCellChild((Component) new Space());
+		row.appendCellChild((Component) new Space());
 
 		// Warehouse
 		warehouseLabel.setStyle(st.getColumnStyle());
@@ -629,7 +669,6 @@ public class WPos extends CustomForm
 		this.productTextBox.setWidth("100%");
 		ZKUpdateUtil.setHflex(fldPR.getComponent(), "true");
 		this.prodLayout.appendChild(fldPR.getComponent());
-		
 
 		prodLayout.appendChild((Component) new Space());
 		prodLayout.appendChild((Component) new Space());
@@ -691,9 +730,9 @@ public class WPos extends CustomForm
 		this.tLine2.appendChild((Component) this.t2Layout);
 		this.tLineButtons.setStyle(st.getRowStyle());
 		this.tLineButtons.setAlign("right");
-		//this.tLineButtons.setSpacing(st.getSpacing1());
+		// this.tLineButtons.setSpacing(st.getSpacing1());
 		this.tLineButtons.appendChild((Component) this.barLayout);
-		this.tLineButtons.appendChild((Component) this.payButton);
+		//this.tLineButtons.appendChild((Component) this.payButton);
 
 		this.dataTable.addEventListener("onDoubleClick", (EventListener) new EventListener<Event>() {
 			public void onEvent(final Event event) throws Exception {
@@ -721,7 +760,7 @@ public class WPos extends CustomForm
 
 		} else {
 			modelOl.addAll(data);
-		}		
+		}
 	}
 
 	@Override
@@ -733,7 +772,7 @@ public class WPos extends CustomForm
 			if (isNew) {
 				CreateUpdateOrder co = new CreateUpdateOrder();
 				newOrder = co.createUpdateOrder(0, this, null);
-				
+
 				lkOrder.setLabel(newOrder.getDocumentNo());
 				lkOrder.setRecordId(newOrder.get_ID());
 
@@ -747,14 +786,14 @@ public class WPos extends CustomForm
 					com.ingeint.pos.forms.OrderLines.setTableColumnClass((IMiniTable) this.dataTable);
 					if (isNew) {
 						com.ingeint.pos.util.Utils.setWidths(this.dataTable.getListHead(), "3", "20", "6", "6", "6",
-								"6", "6");
+								"6", "6", "3");
 					}
 					isNew = false;
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
-			
+
 			updateTotal(newOrder);
 
 		}
@@ -821,41 +860,46 @@ public class WPos extends CustomForm
 
 		refreshContext();
 	}
-	
+
 	public void updateTotal(MOrderLine oline) {
-		
+
 		totalDecimalbox.setValue(oline.getC_Order().getGrandTotal().toString());
-		
+
 	}
-	
+
 	public void updateTotal(MOrder order) {
-		
+
 		totalDecimalbox.setValue(order.getGrandTotal().toString());
-		
+
 	}
-	
+
 	@Override
 	public void onEvent(Event event) throws Exception {
 		String temp = "";
-		
+
 		if (event.getTarget() instanceof Button) {
-			
+
 			if (event.getTarget().equals(btnPrint)) {
 				printOrder(newOrder);
-			}
-			else if (event.getTarget().equals(btnExit)) {
+			} else if (event.getTarget().equals(btnExit)) {
 				this.onClose();
+			} else if (event.getTarget().equals(payButton)) {
+				
+				
+				
+				
+				
 			}
-			
+
 		}
-		
+
 	}
 
 	private void printOrder(MOrder order) {
-		
+
 		if (order == null)
 			return;
-		
+
 		PrintOrder po = new PrintOrder();
 		po.printPOSOrder(order);
 	}
@@ -866,7 +910,7 @@ public class WPos extends CustomForm
 		log.warning("estoy en:" + index);
 
 	}
-
+	
 	@Override
 	public void tableChanged(WTableModelEvent event) {
 
@@ -888,15 +932,15 @@ public class WPos extends CustomForm
 
 				BigDecimal price = new BigDecimal(model.getDataAt(row, 4).toString());
 				priceActual = price.setScale(2, RoundingMode.HALF_UP);
-				
+
 				model.setDataAt(priceActual.multiply(qtyEntered), row, 7);
 				oline.setQtyEntered(qtyEntered);
 				BigDecimal totalNetAmt = priceActual.multiply(qtyEntered).setScale(2, RoundingMode.HALF_UP);
 				oline.setLineNetAmt(totalNetAmt);
-				oline.saveEx();	
-				
+				oline.saveEx();
+
 				updateTotal(oline);
-				
+
 			}
 
 			if (column == COLUMNNAME_PRICE) { // Price updated
@@ -907,10 +951,25 @@ public class WPos extends CustomForm
 				model.setDataAt(priceActual.multiply(qtyEntered), row, 6);
 
 			}
+			
+			if (column == COLUMNNAME_DELETELINE) {
+				
+				log.warning("Toy");
+				
+			}
 
 			log.warning("ID De Linea :" + oline.getC_OrderLine_ID());
 		}
-		
-		
-	}
+	}	
+	
+	
+
+	
+
+	
+
+
+	
+	
+	
 }
