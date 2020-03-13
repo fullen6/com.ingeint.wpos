@@ -2,6 +2,7 @@ package com.ingeint.pos.forms;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.util.Properties;
 import java.util.Vector;
@@ -37,6 +38,7 @@ import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
 import org.compiere.util.CLogger;
+import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Msg;
@@ -706,7 +708,7 @@ public class WPos extends CustomForm
 			modelOl.addTableModelListener(this);
 			dataTable.getModel().addTableModelListener(this);
 			log.warning("Registros: " + dataTable.getRows());
-			Object obj = new Object[] {0,6};
+			Object obj = new Object[] { 0, 6 };
 			modelOl.removeFromSelection(7);
 
 		} else {
@@ -829,16 +831,21 @@ public class WPos extends CustomForm
 
 			// Render now
 			ListModelTable model = (ListModelTable) event.getModel();
+			MOrderLine oline = new MOrderLine(ctx, (int) model.getDataAt(row, 8), null);
 
 			if (column == COLUMNNAME_QTY) { // Updated QtyEntered
 				BigDecimal qty = new BigDecimal(model.getDataAt(row, 2).toString());
 				qtyEntered = qty;
 
 				BigDecimal price = new BigDecimal(model.getDataAt(row, 4).toString());
-				priceActual = price;
-
-				model.setDataAt(priceActual.multiply(qtyEntered), row, 6);
-
+				priceActual = price.setScale(2, RoundingMode.HALF_UP);
+				
+				model.setDataAt(priceActual.multiply(qtyEntered), row, 7);
+				oline.setQtyEntered(qtyEntered);
+				BigDecimal totalNetAmt = priceActual.multiply(qtyEntered).setScale(2, RoundingMode.HALF_UP);
+				oline.setLineNetAmt(totalNetAmt);
+				
+				oline.saveEx();
 			}
 
 			if (column == COLUMNNAME_PRICE) { // Price updated
@@ -847,11 +854,10 @@ public class WPos extends CustomForm
 				priceActual = price;
 
 				model.setDataAt(priceActual.multiply(qtyEntered), row, 6);
-				
+
 			}
-			
-			int C_OrderLine_ID = (int) model.getDataAt(row, 7);
-			log.warning("ID De Linea :"+C_OrderLine_ID);
+
+			log.warning("ID De Linea :" + oline.getC_OrderLine_ID());
 		}
 	}
 }
