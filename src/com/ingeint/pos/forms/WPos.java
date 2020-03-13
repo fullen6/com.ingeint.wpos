@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -15,6 +16,7 @@ import org.adempiere.webui.component.DocumentLink;
 import org.adempiere.webui.component.Grid;
 import org.adempiere.webui.component.GridFactory;
 import org.adempiere.webui.component.Label;
+import org.adempiere.webui.component.ListCell;
 import org.adempiere.webui.component.ListModelTable;
 import org.adempiere.webui.component.Listbox;
 import org.adempiere.webui.component.ListboxFactory;
@@ -907,6 +909,22 @@ public class WPos extends CustomForm
 
 		final Integer index = this.dataTable.getSelectedIndex();
 		log.warning("estoy en:" + index);
+		
+		ListCell cellProductSearch = (ListCell) dataTable.getChildren().get(index + 1).getChildren().get(1);
+		List<Component> lsComponentProductSearch = cellProductSearch.getChildren();
+
+		if (lsComponentProductSearch.size() == 0) {
+			int AD_Column_ID = 2221;
+			MLookup lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID, DisplayType.Search);
+			WSearchEditor fldPRD = new WSearchEditor("M_Product_ID", true, false, true, lookupPRD);
+			fldPRD.addValueChangeListener(this);
+			fldPRD.setReadWrite(true);
+			fldPRD.setValue(null);			
+			
+			cellProductSearch.setLabel("");
+			lsComponentProductSearch.add(fldPRD.getComponent());
+			fldPRD.showMenu();
+		}
 
 	}
 	
