@@ -33,6 +33,7 @@ import org.adempiere.webui.event.WTableModelEvent;
 import org.adempiere.webui.event.WTableModelListener;
 import org.adempiere.webui.panel.IFormController;
 import org.adempiere.webui.session.SessionManager;
+import org.adempiere.webui.theme.ThemeManager;
 import org.adempiere.webui.util.ZKUpdateUtil;
 import org.compiere.minigrid.IMiniTable;
 import org.compiere.model.MLookup;
@@ -82,6 +83,7 @@ public class WPos extends CustomForm
 	private Button btnPrint;
 	private Button cancelButton;
 	private Button payButton;
+	private Button orderSearch;
 
 	private Rows custRows;
 	private Grid custLayout;
@@ -151,26 +153,7 @@ public class WPos extends CustomForm
 	
 	//PAYMENT INFO
 	
-	Vector<Vector<Object>> dataPayment;
-	ArrayList<ArrayList<Object>> dataPaymentID;
-	Window selection;
-	Textbox txtTotalPayAmt;
-	NumberBox txtPayAmt;
-	Label lbRoutingNo;
-	Textbox txtRoutingNo;
-	Label lbLotNo;
-	Textbox txtLotNo;
-	WListbox lstPaymetSelect;
-	Button processButtonPayment;
-	Button okButtonPayment;
-	Label lbTotal;
-	Label vlTotal;
-				
-	Listbox fldTT;
-	X_C_POSTenderType TT;
-	int mTT = 0;
-	Rows rows = null;
-	Row row = null;
+	Window Payment;
 	
 	//END PAYMENT INFO
 	
@@ -298,6 +281,7 @@ public class WPos extends CustomForm
 		this.txLayout = new Hbox();
 
 		this.ptotalLayout = new Window();
+		this.Payment = new Window();
 		this.tLine1 = new Hbox();
 		this.tLine2 = new Hbox();
 		this.tLineButtons = new Hbox();
@@ -547,21 +531,33 @@ public class WPos extends CustomForm
 
 		this.btnSave.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "save")).toString());
 		this.btnSave.addEventListener(Events.ON_CLICK, this);
+		this.btnSave.setImage(ThemeManager.getThemeResource("images/Save24.png"));
 		this.btnSave.setStyle(st.getBigButtomStyle());
 
 		this.btnExit.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Logout")).toString());
 		this.btnExit.addEventListener(Events.ON_CLICK, this);
+		this.btnExit.setImage(ThemeManager.getThemeResource("images/Previous24.png"));
 		this.btnExit.setStyle(st.getBigButtomStyle());
 
 		this.btnPrint
 				.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Print")).toString().replace("&", ""));
 		this.btnPrint.addEventListener(Events.ON_CLICK, this);
+		this.btnPrint.setImage(ThemeManager.getThemeResource("images/Print24.png"));
 		this.btnPrint.setStyle(st.getBigButtomStyle());
 
 		final Hbox cbuttons = new Hbox();
 		this.payButton.setStyle(st.getBigButtomStyle());
+		this.payButton.setImage(ThemeManager.getThemeResource("images/Payment24.png"));
 		this.payButton.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_Payment_ID")).toString());
 		this.payButton.addEventListener(Events.ON_CLICK, this);
+		
+		orderSearch = new Button();
+		orderSearch.setLabel(Msg.getMsg(ctx, "search") + " " + Msg.getMsg(ctx, "sales.order"));
+		orderSearch.addEventListener(Events.ON_CLICK, this);
+		orderSearch.setWidth("80%");
+		orderSearch.setImage(ThemeManager.getThemeResource("images/Find24.png"));
+		orderSearch.setTooltiptext(Msg.getMsg(ctx, "Import") + " " + Msg.getMsg(ctx, "sales.order"));
+		orderSearch.setStyle(st.getBigButtomStyle());
 
 		Row row = this.custRows.newRow();
 		
@@ -579,9 +575,11 @@ public class WPos extends CustomForm
 		
 		this.payButton.setWidth("80%");
 		row.appendCellChild((Component) this.payButton, 2);
+		
+		this.orderSearch.setWidth("100%");
+		row.appendCellChild((Component) this.orderSearch, 3);
 
-		row = this.custRows.newRow(); // enter
-
+		row = this.custRows.newRow(); // enter	
 
 		// this.bPartnerLabel.setWidth("100%");
 		row.appendChild((Component) new Space());
@@ -884,6 +882,7 @@ public class WPos extends CustomForm
 			} else if (event.getTarget().equals(btnExit)) {
 				this.onClose();
 			} else if (event.getTarget().equals(payButton)) {
+				
 				
 				
 				
