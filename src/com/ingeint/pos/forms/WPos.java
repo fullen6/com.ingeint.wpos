@@ -38,7 +38,6 @@ import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
 import org.compiere.util.CLogger;
-import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Msg;
@@ -46,6 +45,7 @@ import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.HtmlBasedComponent;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zk.ui.event.Events;
 import org.zkoss.zul.Div;
 import org.zkoss.zul.Hbox;
 import org.zkoss.zul.Space;
@@ -54,6 +54,7 @@ import org.zkoss.zul.Window;
 
 import com.ingeint.pos.base.CustomForm;
 import com.ingeint.pos.functions.CreateUpdateOrder;
+import com.ingeint.pos.functions.PrintOrder;
 import com.ingeint.pos.model.MCustomPOS;
 import com.ingeint.pos.util.Styles;
 
@@ -72,7 +73,7 @@ public class WPos extends CustomForm
 	ListModelTable modelOl;
 
 	private Button btnSave;
-	private Button btnDiscart;
+	private Button btnExit;
 	private Button btnProcess;
 	private Button btnPrint;
 	private Button cancelButton;
@@ -233,9 +234,12 @@ public class WPos extends CustomForm
 
 		lkOrder = new DocumentLink("", MOrder.Table_ID, 0);
 
+		if (LoginAD_Org_ID == 0)
+			throw new AdempiereException("@Org0NotAllowed@");
+		
 		if (pos == null)
-			throw new AdempiereException("El Usuario posee un terminal POS ");
-
+			throw new AdempiereException("@NoPOSForUser@");
+		
 		setAD_Org_ID(pos.getAD_Org_ID());
 		setC_BPartner_ID(pos.getC_BPartnerCashTrx_ID());
 		setC_DocType_ID(pos.getC_DocType_ID());
@@ -279,7 +283,7 @@ public class WPos extends CustomForm
 		this.lblSalesRep = new Label();
 
 		this.btnSave = new Button();
-		this.btnDiscart = new Button();
+		this.btnExit = new Button();
 		this.btnProcess = new Button();
 		this.btnPrint = new Button();
 		this.cancelButton = new Button();
@@ -406,7 +410,8 @@ public class WPos extends CustomForm
 			MLookup lookupUOM = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.Table);
 			flUOM = new WTableDirEditor(MOrderLine.COLUMNNAME_C_UOM_ID, true, false, true, lookupUOM);
 			flUOM.addValueChangeListener(this);
-
+			
+			
 			final Timestamp time = Env.getContextAsDate(Env.getCtx(), "#Date");
 			this.entryDate.setValue((Object) time);
 			this.dateScheduled.setValue((Object) time);
@@ -513,16 +518,16 @@ public class WPos extends CustomForm
 		this.btnSave.addActionListener((EventListener) this);
 		this.btnSave.setStyle(st.getBigButtomStyle());
 
-		this.btnDiscart.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Discart")).toString());
-		this.btnDiscart.addActionListener((EventListener) this);
-		this.btnDiscart.setStyle(st.getBigButtomStyle());
+		this.btnExit.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Exit")).toString());
+		this.btnExit.addActionListener((EventListener) this);
+		this.btnExit.setStyle(st.getBigButtomStyle());
 
 		this.btnProcess.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Process")).toString());
 		this.btnProcess.addActionListener((EventListener) this);
 		this.btnProcess.setStyle(st.getBigButtomStyle());
 
-		this.btnPrint.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Print")).toString());
-		this.btnPrint.addActionListener((EventListener) this);
+		this.btnPrint.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Print")).toString().replace("&", ""));
+		this.btnPrint.addEventListener(Events.ON_CLICK, this);
 		this.btnPrint.setStyle(st.getBigButtomStyle());
 
 		final Hbox cbuttons = new Hbox();
@@ -535,7 +540,7 @@ public class WPos extends CustomForm
 		// Principal Buttons
 		this.btnSave.setWidth("100%");
 		row.appendChild((Component) this.btnSave);
-		row.appendChild((Component) this.btnDiscart);
+		row.appendChild((Component) this.btnExit);
 		this.btnPrint.setWidth("100%");
 		row.appendChild((Component) this.btnPrint);
 		this.btnProcess.setWidth("100%");
@@ -809,6 +814,29 @@ public class WPos extends CustomForm
 		}
 
 		refreshContext();
+	}
+	
+	@Override
+	public void onEvent(Event event) throws Exception {
+		String temp = "";
+		
+		if (event.getTarget() instanceof Button) {
+			
+			if (event.getTarget().equals(btnPrint)) {
+				printOrder(newOrder);
+			}
+			else if (event.getTarget().equals(btnExit)) {
+				this.onClose();
+			}
+			
+		}
+		
+	}
+
+	private void printOrder(MOrder order) {
+		
+		PrintOrder po = new PrintOrder();
+		po.printPOSOrder(order);
 	}
 
 	private void dataTableOnDoubleClick() {
