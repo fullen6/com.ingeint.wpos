@@ -10,7 +10,6 @@ import java.util.Vector;
 import org.compiere.minigrid.IMiniTable;
 import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
-import org.compiere.model.MPriceList;
 import org.compiere.model.MProduct;
 import org.compiere.util.CLogger;
 import org.compiere.util.DisplayType;
@@ -61,7 +60,6 @@ public class OrderLines {
 			throws IOException {
 
 		MOrderLine oline = createOrderLine(order, product.getM_Product_ID());
-		int StdPrecision = MPriceList.getStandardPrecision(order.getCtx(), M_PriceList_ID);
 		BigDecimal priceEntered = oline.getPriceEntered();
 		priceEntered = priceEntered.round(new MathContext(2));
 		BigDecimal taxAmt = oline.getPriceEntered().multiply((oline.getC_Tax().getRate().divide(Env.ONEHUNDRED)));

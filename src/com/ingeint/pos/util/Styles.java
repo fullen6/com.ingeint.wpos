@@ -39,7 +39,7 @@ public class Styles {
 
 	public String getBigButtomStyle() {
 
-		String buttonTomato = "background:#7c7bad;Height:35px;Width:160px;border: 3px solid #D2D2FF;border-radius:8px;padding: 1px 1px;font-family: Arial,"
+		String buttonTomato = "background:#7c7bad;Height:35px;Width:250px;border: 3px solid #D2D2FF;border-radius:12px;padding: 1px 1px;font-family: Arial,"
 				+ " Helvetica, sans-serif;font-size: 12px;font-weight: normal; letter-spacing:0.1em; color: white";
 		return buttonTomato;
 	}

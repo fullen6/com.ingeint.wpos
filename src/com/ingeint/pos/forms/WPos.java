@@ -235,10 +235,10 @@ public class WPos extends CustomForm
 		lkOrder = new DocumentLink("", MOrder.Table_ID, 0);
 
 		if (LoginAD_Org_ID == 0)
-			throw new AdempiereException("@Org0NotAllowed@");
+			throw new AdempiereException(Msg.translate(ctx, "Org0NotAllowed"));
 		
 		if (pos == null)
-			throw new AdempiereException("@NoPOSForUser@");
+			throw new AdempiereException(Msg.translate(ctx,"NoPOSForUser"));
 		
 		setAD_Org_ID(pos.getAD_Org_ID());
 		setC_BPartner_ID(pos.getC_BPartnerCashTrx_ID());
@@ -478,7 +478,7 @@ public class WPos extends CustomForm
 		this.tLine1.setWidths("50%,5%,35%,10%,10%,10%,10%");
 		this.tLine2.setWidth("99%");
 		this.tLine2.setWidths("20%,5%,10%,5%,10%,10%,20%");
-		this.tLineButtons.setWidth("99%");
+		this.tLineButtons.setWidth("100%");
 		this.tLineButtons.setWidths("20%,5%,10%,5%,10%,10%,20%");
 		this.vmainLayout.appendChild((Component) this.pcustLayout);
 		this.pcustLayout.appendChild((Component) this.custLayout);
@@ -515,17 +515,13 @@ public class WPos extends CustomForm
 		this.lblDateScheduled.setText(Msg.translate(Env.getCtx(), "DateOrdered"));
 
 		this.btnSave.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "save")).toString());
-		this.btnSave.addActionListener((EventListener) this);
+		this.btnSave.addEventListener(Events.ON_CLICK, this);
 		this.btnSave.setStyle(st.getBigButtomStyle());
 
-		this.btnExit.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Exit")).toString());
-		this.btnExit.addActionListener((EventListener) this);
+		this.btnExit.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Logout")).toString());
+		this.btnExit.addEventListener(Events.ON_CLICK, this);
 		this.btnExit.setStyle(st.getBigButtomStyle());
-
-		this.btnProcess.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Process")).toString());
-		this.btnProcess.addActionListener((EventListener) this);
-		this.btnProcess.setStyle(st.getBigButtomStyle());
-
+		
 		this.btnPrint.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Print")).toString().replace("&", ""));
 		this.btnPrint.addEventListener(Events.ON_CLICK, this);
 		this.btnPrint.setStyle(st.getBigButtomStyle());
@@ -533,25 +529,32 @@ public class WPos extends CustomForm
 		final Hbox cbuttons = new Hbox();
 		this.payButton.setStyle(st.getBigButtomStyle());
 		this.payButton.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_Payment_ID")).toString());
-		this.payButton.addActionListener((EventListener) this);
+		this.payButton.addEventListener(Events.ON_CLICK, this);
 
 		Row row = this.custRows.newRow();
 
 		// Principal Buttons
-		this.btnSave.setWidth("100%");
-		row.appendChild((Component) this.btnSave);
-		row.appendChild((Component) this.btnExit);
-		this.btnPrint.setWidth("100%");
-		row.appendChild((Component) this.btnPrint);
-		this.btnProcess.setWidth("100%");
-		row.appendChild((Component) this.btnProcess);
+		this.btnSave.setWidth("80%");
+		row.appendCellChild((Component) this.btnSave,2);
+		
+		this.btnExit.setWidth("80%");
+		row.appendCellChild((Component) this.btnExit,2);
+		
+		this.btnPrint.setWidth("80%");
+		row.appendCellChild((Component) this.btnPrint,2);
+		
+		row = this.custRows.newRow(); // enter
+		
+		//row.appendChild((Component) new Space());
 		row.appendChild((Component) new Space());
-
+		row.appendChild((Component) new Space());
+		row.appendChild((Component) new Space());
+		row.appendChild((Component) new Space());
 		// Organization
 		row.appendChild((Component) new Space());
 		organizationLabel.setStyle(st.getColumnStyle());
 		row.appendCellChild(organizationLabel);
-		row.appendCellChild(fldOR.getComponent(), 2);
+		row.appendCellChild(fldOR.getComponent(), 4);
 
 		row = this.custRows.newRow(); // enter
 
@@ -570,7 +573,7 @@ public class WPos extends CustomForm
 		// DateOrdered
 		this.lblDateScheduled.setStyle(st.getColumnStyle());
 		row.appendChild(this.lblDateScheduled);
-		row.appendChild((Component) this.dateScheduled.getComponent());
+		row.appendCellChild((Component) this.dateScheduled.getComponent(),2);
 
 		row = this.custRows.newRow(); // enter
 
@@ -623,9 +626,10 @@ public class WPos extends CustomForm
 		this.productLabel.setStyle(st.getColumnStyle());
 		ZKUpdateUtil.setHflex((HtmlBasedComponent) this.productLabel, "2");
 		prodLayout.appendChild((Component) productLabel);
-		// this.productTextBox.setWidth("100%");
-		this.prodLayout.appendChild(fldPR.getComponent());
+		this.productTextBox.setWidth("100%");
 		ZKUpdateUtil.setHflex(fldPR.getComponent(), "true");
+		this.prodLayout.appendChild(fldPR.getComponent());
+		
 
 		prodLayout.appendChild((Component) new Space());
 		prodLayout.appendChild((Component) new Space());
@@ -687,10 +691,9 @@ public class WPos extends CustomForm
 		this.tLine2.appendChild((Component) this.t2Layout);
 		this.tLineButtons.setStyle(st.getRowStyle());
 		this.tLineButtons.setAlign("right");
-		this.tLineButtons.setSpacing(st.getSpacing1());
+		//this.tLineButtons.setSpacing(st.getSpacing1());
 		this.tLineButtons.appendChild((Component) this.barLayout);
 		this.tLineButtons.appendChild((Component) this.payButton);
-		this.tLineButtons.appendChild((Component) this.cancelButton);
 
 		this.dataTable.addEventListener("onDoubleClick", (EventListener) new EventListener<Event>() {
 			public void onEvent(final Event event) throws Exception {
@@ -718,7 +721,7 @@ public class WPos extends CustomForm
 
 		} else {
 			modelOl.addAll(data);
-		}
+		}		
 	}
 
 	@Override
@@ -730,7 +733,7 @@ public class WPos extends CustomForm
 			if (isNew) {
 				CreateUpdateOrder co = new CreateUpdateOrder();
 				newOrder = co.createUpdateOrder(0, this, null);
-
+				
 				lkOrder.setLabel(newOrder.getDocumentNo());
 				lkOrder.setRecordId(newOrder.get_ID());
 
@@ -751,6 +754,9 @@ public class WPos extends CustomForm
 					e.printStackTrace();
 				}
 			}
+			
+			updateTotal(newOrder);
+
 		}
 
 		if (evt.getPropertyName().equals(MOrder.COLUMNNAME_AD_Org_ID)) {
@@ -816,6 +822,18 @@ public class WPos extends CustomForm
 		refreshContext();
 	}
 	
+	public void updateTotal(MOrderLine oline) {
+		
+		totalDecimalbox.setValue(oline.getC_Order().getGrandTotal().toString());
+		
+	}
+	
+	public void updateTotal(MOrder order) {
+		
+		totalDecimalbox.setValue(order.getGrandTotal().toString());
+		
+	}
+	
 	@Override
 	public void onEvent(Event event) throws Exception {
 		String temp = "";
@@ -834,6 +852,9 @@ public class WPos extends CustomForm
 	}
 
 	private void printOrder(MOrder order) {
+		
+		if (order == null)
+			return;
 		
 		PrintOrder po = new PrintOrder();
 		po.printPOSOrder(order);
@@ -872,8 +893,10 @@ public class WPos extends CustomForm
 				oline.setQtyEntered(qtyEntered);
 				BigDecimal totalNetAmt = priceActual.multiply(qtyEntered).setScale(2, RoundingMode.HALF_UP);
 				oline.setLineNetAmt(totalNetAmt);
+				oline.saveEx();	
 				
-				oline.saveEx();
+				updateTotal(oline);
+				
 			}
 
 			if (column == COLUMNNAME_PRICE) { // Price updated
@@ -887,5 +910,7 @@ public class WPos extends CustomForm
 
 			log.warning("ID De Linea :" + oline.getC_OrderLine_ID());
 		}
+		
+		
 	}
 }
