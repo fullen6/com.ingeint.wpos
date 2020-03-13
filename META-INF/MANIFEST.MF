@@ -26,8 +26,7 @@ Service-Component: OSGI-INF/ModelFactory.xml,
  OSGI-INF/CalloutFactory.xml,
  OSGI-INF/ProcessFactory.xml,
  OSGI-INF/FormFactory.xml
-Bundle-ClassPath: .,
- lib/velocity-engine-core.jar
+Bundle-ClassPath: .
 Bundle-Activator: org.adempiere.plugin.utils.Incremental2PackActivator
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Automatic-Module-Name: com.ingeint.pos
