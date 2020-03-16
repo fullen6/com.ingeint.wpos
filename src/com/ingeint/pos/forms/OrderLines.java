@@ -1,6 +1,5 @@
 package com.ingeint.pos.forms;
 
-import java.awt.Button;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -37,7 +36,6 @@ public class OrderLines {
 		columnNames.add(Msg.translate(Env.getCtx(), MOrderLine.COLUMNNAME_C_Tax_ID));
 		columnNames.add(Msg.translate(Env.getCtx(), MOrderLine.COLUMNNAME_LineNetAmt));
 		columnNames.add(Msg.translate(Env.getCtx(), MOrderLine.COLUMNNAME_C_OrderLine_ID));
-		columnNames.add(Msg.translate(Env.getCtx(), MOrder.COLUMNNAME_DocAction));
 
 		return columnNames;
 	}
@@ -53,7 +51,6 @@ public class OrderLines {
 		table.setColumnClass(i++, (Class) BigDecimal.class, true);
 		table.setColumnClass(i++, (Class) BigDecimal.class, true);
 		table.setColumnClass(i++, (Class) Integer.class, true);
-		table.setColumnClass(i++, (Class) Button.class, true);
 
 		table.autoSize();
 
@@ -62,31 +59,42 @@ public class OrderLines {
 	public static Vector<Vector<Object>> setOrderLine(MProduct product, Integer M_PriceList_ID, MOrder order)
 			throws IOException {
 
-		MOrderLine oline = createOrderLine(order, product.getM_Product_ID());
-		BigDecimal priceEntered = oline.getPriceEntered();
-		priceEntered = priceEntered.round(new MathContext(2));
-		BigDecimal taxAmt = oline.getPriceEntered().multiply((oline.getC_Tax().getRate().divide(Env.ONEHUNDRED)));
-		taxAmt = taxAmt.round(new MathContext(5));
-		taxAmt = taxAmt.setScale(2, RoundingMode.HALF_UP);
-
-		Button btn = new Button();
-		btn.setName("Delete");
-		btn.setEnabled(true);
-		btn.setLabel("Delete");
-
 		Vector<Vector<Object>> data = new Vector<Vector<Object>>();
-		Vector<Object> line = new Vector<Object>();
-		line.add(true);
-		line.add(product.getValue() + "_" + product.getName());
-		line.add(Env.ONE);
-		line.add("Unidad");
-		line.add(priceEntered);
-		line.add(Env.ZERO);
-		line.add(taxAmt);
-		line.add(priceEntered);
-		line.add(oline.getC_OrderLine_ID());
-		line.add(btn.getComponentAt(2, 2));
-		data.add(line);
+
+		if (order != null) {
+			MOrderLine oline = createOrderLine(order, product.getM_Product_ID());
+			BigDecimal priceEntered = oline.getPriceEntered();
+			priceEntered = priceEntered.round(new MathContext(2));
+			BigDecimal taxAmt = oline.getPriceEntered().multiply((oline.getC_Tax().getRate().divide(Env.ONEHUNDRED)));
+			taxAmt = taxAmt.round(new MathContext(5));
+			taxAmt = taxAmt.setScale(2, RoundingMode.HALF_UP);
+
+			Vector<Object> line = new Vector<Object>();
+			line.add(true);
+			line.add(product.getValue() + "_" + product.getName());
+			line.add(Env.ONE);
+			line.add("Unidad");
+			line.add(priceEntered);
+			line.add(Env.ZERO);
+			line.add(taxAmt);
+			line.add(priceEntered);
+			line.add(oline.getC_OrderLine_ID());
+			data.add(line);
+
+		} else {
+
+			Vector<Object> line = new Vector<Object>();
+			line.add(true);
+			line.add("");
+			line.add(Env.ONE);
+			line.add("Unidad");
+			line.add(Env.ZERO);
+			line.add(Env.ZERO);
+			line.add(Env.ZERO);
+			line.add(Env.ZERO);
+			line.add(null);
+			data.add(line);
+		}		
 
 		return data;
 	}

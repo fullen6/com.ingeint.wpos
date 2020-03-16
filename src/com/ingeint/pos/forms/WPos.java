@@ -4,13 +4,13 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Level;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.adempiere.webui.apps.AEnv;
 import org.adempiere.webui.component.Button;
 import org.adempiere.webui.component.DocumentLink;
 import org.adempiere.webui.component.Grid;
@@ -18,9 +18,7 @@ import org.adempiere.webui.component.GridFactory;
 import org.adempiere.webui.component.Label;
 import org.adempiere.webui.component.ListCell;
 import org.adempiere.webui.component.ListModelTable;
-import org.adempiere.webui.component.Listbox;
 import org.adempiere.webui.component.ListboxFactory;
-import org.adempiere.webui.component.NumberBox;
 import org.adempiere.webui.component.Row;
 import org.adempiere.webui.component.Rows;
 import org.adempiere.webui.component.Textbox;
@@ -43,7 +41,6 @@ import org.compiere.model.MLookupFactory;
 import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
-import org.compiere.model.X_C_POSTenderType;
 import org.compiere.util.CLogger;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
@@ -150,15 +147,15 @@ public class WPos extends CustomForm
 	private WTableDirEditor fldSR;
 	private WTableDirEditor flUOM;
 	private WTableDirEditor fldDT;
-	
+
 	Styles st = null;
-	
-	//PAYMENT INFO
-	
+
+	// PAYMENT INFO
+
 	Window Payment;
-	
-	//END PAYMENT INFO
-	
+
+	// END PAYMENT INFO
+
 	DocumentLink lkOrder;
 
 	MOrder newOrder;
@@ -245,11 +242,12 @@ public class WPos extends CustomForm
 	BigDecimal qtyEntered = Env.ONE;
 
 	private MProduct product;
+	Boolean isForUpdate = false;
 
 	@Override
 	protected void initForm() {
 
-		lkOrder = new DocumentLink("", MOrder.Table_ID, 0);
+		lkOrder = new DocumentLink(Msg.translate(ctx, "New"), MOrder.Table_ID, 0);
 
 		if (LoginAD_Org_ID == 0)
 			throw new AdempiereException(Msg.translate(ctx, "Org0NotAllowed"));
@@ -289,9 +287,6 @@ public class WPos extends CustomForm
 		this.tLineButtons = new Hbox();
 
 		this.dataTable = ListboxFactory.newDataTable();
-
-		this.productLabel = new Label();
-		this.productTextBox = new Textbox();
 
 		this.bPartnerLabel = new Label();
 		this.doctypeLabel = new Label();
@@ -347,14 +342,6 @@ public class WPos extends CustomForm
 					(Throwable) e);
 			SessionManager.getAppDesktop().closeActiveWindow();
 		}
-
-	}
-
-	private void refreshContext() {
-
-		Env.setContext(ctx, this.m_WindowNo, "M_PriceList_ID", getM_PriceList_ID());
-		Env.setContext(ctx, this.getWindowNo(), "M_Warehouse_ID", getM_Warehouse_ID());
-		Env.setContext(Env.getCtx(), this.m_WindowNo, "IsSOTrx", "Y");
 
 	}
 
@@ -522,8 +509,10 @@ public class WPos extends CustomForm
 		this.lblSalesRep.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "SalesRep_ID")).toString());
 		this.lblCredit.setText(Msg.translate(Env.getCtx(), "Credits"));
 
-		this.productLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_OrderLine_ID")).toString());
-		this.productTextBox.addEventListener("onBlur", (EventListener) this);
+		// this.productLabel.setText(new
+		// StringBuilder().append(Msg.translate(Env.getCtx(),
+		// "C_OrderLine_ID")).toString());
+		// this.productTextBox.addEventListener("onBlur", (EventListener) this);
 		this.totalLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "Total")).toString());
 		this.subTotalLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "SubTotal")).toString());
 		this.taxLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_Tax_ID")).toString());
@@ -552,7 +541,7 @@ public class WPos extends CustomForm
 		this.payButton.setImage(ThemeManager.getThemeResource("images/Payment24.png"));
 		this.payButton.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_Payment_ID")).toString());
 		this.payButton.addEventListener(Events.ON_CLICK, this);
-		
+
 		orderSearch = new Button();
 		orderSearch.setLabel(Msg.getMsg(ctx, "search") + " " + Msg.getMsg(ctx, "sales.order"));
 		orderSearch.addEventListener(Events.ON_CLICK, this);
@@ -562,7 +551,7 @@ public class WPos extends CustomForm
 		orderSearch.setStyle(st.getBigButtomStyle());
 
 		Row row = this.custRows.newRow();
-		
+
 		row.appendChild((Component) new Space());
 
 		// Principal Buttons
@@ -574,14 +563,14 @@ public class WPos extends CustomForm
 
 		this.btnPrint.setWidth("80%");
 		row.appendCellChild((Component) this.btnPrint, 2);
-		
+
 		this.payButton.setWidth("80%");
 		row.appendCellChild((Component) this.payButton, 2);
-		
+
 		this.orderSearch.setWidth("100%");
 		row.appendCellChild((Component) this.orderSearch, 3);
 
-		row = this.custRows.newRow(); // enter	
+		row = this.custRows.newRow(); // enter
 
 		// this.bPartnerLabel.setWidth("100%");
 		row.appendChild((Component) new Space());
@@ -621,9 +610,8 @@ public class WPos extends CustomForm
 
 		row = this.custRows.newRow(); // enter
 
-
 		row.appendChild((Component) new Space());
-		
+
 		// PriceListtrx
 		priceListLabel.setStyle(st.getColumnStyle());
 		row.appendCellChild(priceListLabel);
@@ -638,7 +626,7 @@ public class WPos extends CustomForm
 		lkOrder.setStyle(st.getLabelStype());
 		ZKUpdateUtil.setHflex(lkOrder, "true");
 		lkOrder.setLeft("0%");
-		row.appendCellChild(lkOrder, 2);
+		row.appendCellChild(lkOrder, 4);
 		row.appendChild((Component) new Space());
 
 		row = this.custRows.newRow(); // enter
@@ -648,7 +636,7 @@ public class WPos extends CustomForm
 		lblSalesRep.setStyle(st.getColumnStyle());
 		row.appendCellChild(lblSalesRep);
 		row.appendCellChild(fldSR.getComponent(), 3);
-		
+
 		row.appendCellChild((Component) new Space());
 		row.appendCellChild((Component) new Space());
 		row.appendCellChild((Component) new Space());
@@ -663,15 +651,15 @@ public class WPos extends CustomForm
 		row = this.custRows.newRow(); // enter
 
 		// Products
-		this.productLabel.setStyle(st.getColumnStyle());
-		ZKUpdateUtil.setHflex((HtmlBasedComponent) this.productLabel, "2");
-		prodLayout.appendChild((Component) productLabel);
-		this.productTextBox.setWidth("100%");
-		ZKUpdateUtil.setHflex(fldPR.getComponent(), "true");
-		this.prodLayout.appendChild(fldPR.getComponent());
+		// this.productLabel.setStyle(st.getColumnStyle());
+		// ZKUpdateUtil.setHflex((HtmlBasedComponent) this.productLabel, "2");
+		// prodLayout.appendChild((Component) productLabel);
+		// this.productTextBox.setWidth("100%");
+		// ZKUpdateUtil.setHflex(fldPR.getComponent(), "true");
+		// this.prodLayout.appendChild(fldPR.getComponent());
 
-		prodLayout.appendChild((Component) new Space());
-		prodLayout.appendChild((Component) new Space());
+		// prodLayout.appendChild((Component) new Space());
+		// prodLayout.appendChild((Component) new Space());
 
 		// OrderLines
 		this.dataTable.setStyle(
@@ -732,21 +720,43 @@ public class WPos extends CustomForm
 		this.tLineButtons.setAlign("right");
 		// this.tLineButtons.setSpacing(st.getSpacing1());
 		this.tLineButtons.appendChild((Component) this.barLayout);
-		//this.tLineButtons.appendChild((Component) this.payButton);
+		// this.tLineButtons.appendChild((Component) this.payButton);
 
 		this.dataTable.addEventListener("onDoubleClick", (EventListener) new EventListener<Event>() {
 			public void onEvent(final Event event) throws Exception {
 				dataTableOnDoubleClick();
 			}
 		});
+
+		this.dataTable.addEventListener("onClick", (EventListener) new EventListener<Event>() {
+			public void onEvent(final Event event) throws Exception {
+				dataTAbleOnCLick ();
+			}
+
+		});
+
+		Vector<String> columnNames = com.ingeint.pos.forms.OrderLines.getColumnNames();
+		Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product, M_PriceList_ID, newOrder);
+		modelOl = new ListModelTable(data);
+		dataTable.setData(modelOl, columnNames);
+		log.warning("Registros: " + dataTable.getRows());
+		modelOl.addTableModelListener(this);
+		dataTable.getModel().addTableModelListener(this);
+		log.warning("Registros: " + dataTable.getRows());
+		modelOl.removeFromSelection(7);
+
+		com.ingeint.pos.forms.OrderLines.setTableColumnClass((IMiniTable) this.dataTable);
+
+		// insertProductField();
+
+		com.ingeint.pos.util.Utils.setWidths(this.dataTable.getListHead(), "3", "28", "6", "6", "6", "6", "6", "3");
+
 	}
 
 	public void createLines(MProduct product, MOrder order) throws IOException {
 
-		M_Product_ID = product.getM_Product_ID();
-
 		Vector<String> columnNames = com.ingeint.pos.forms.OrderLines.getColumnNames();
-		Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product, M_PriceList_ID, newOrder);
+		Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product, M_PriceList_ID, order);
 
 		if (isNew) {
 			modelOl = new ListModelTable(data);
@@ -755,12 +765,15 @@ public class WPos extends CustomForm
 			modelOl.addTableModelListener(this);
 			dataTable.getModel().addTableModelListener(this);
 			log.warning("Registros: " + dataTable.getRows());
-			Object obj = new Object[] { 0, 6 };
+			// Object obj = new Object[] { 0, 6 };
 			modelOl.removeFromSelection(7);
 
 		} else {
 			modelOl.addAll(data);
 		}
+
+		isNew = false;
+		product = null;
 	}
 
 	@Override
@@ -779,19 +792,31 @@ public class WPos extends CustomForm
 			}
 
 			if (evt.getNewValue() != null) {
-				MProduct product = new MProduct(ctx, (Integer.valueOf(evt.getNewValue().toString())), null);
-				try {
-					createLines(product, newOrder);
 
-					com.ingeint.pos.forms.OrderLines.setTableColumnClass((IMiniTable) this.dataTable);
-					if (isNew) {
-						com.ingeint.pos.util.Utils.setWidths(this.dataTable.getListHead(), "3", "20", "6", "6", "6",
-								"6", "6", "3");
+				MProduct product = new MProduct(ctx, (Integer.valueOf(evt.getNewValue().toString())), null);
+
+				try {
+
+					if (!isForUpdate) {
+						createLines(product, newOrder);
+						createLines(product, null);
+						isForUpdate = true;
+					} else {
+
+						Vector<String> columnNames = com.ingeint.pos.forms.OrderLines.getColumnNames();
+						Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product,
+								M_PriceList_ID, newOrder);
+						modelOl = new ListModelTable(data);
+						dataTable.setData(modelOl, columnNames);
+						createLines(product, null);
 					}
+
 					isNew = false;
+					// insertProductField();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+
 			}
 
 			updateTotal(newOrder);
@@ -883,12 +908,10 @@ public class WPos extends CustomForm
 				printOrder(newOrder);
 			} else if (event.getTarget().equals(btnExit)) {
 				this.onClose();
-			} else if (event.getTarget().equals(payButton)) {
+			} else if (event.getTarget().equals(payButton)) {				
 				
-				
-				
-				
-				
+				WPayment payWin = new WPayment();
+				AEnv.showWindow(payWin.PaymentWindow());
 				
 			}
 
@@ -905,11 +928,11 @@ public class WPos extends CustomForm
 		po.printPOSOrder(order);
 	}
 
-	private void dataTableOnDoubleClick() {
+	private void dataTAbleOnCLick() {
 
 		final Integer index = this.dataTable.getSelectedIndex();
 		log.warning("estoy en:" + index);
-		
+
 		ListCell cellProductSearch = (ListCell) dataTable.getChildren().get(index + 1).getChildren().get(1);
 		List<Component> lsComponentProductSearch = cellProductSearch.getChildren();
 
@@ -919,15 +942,46 @@ public class WPos extends CustomForm
 			WSearchEditor fldPRD = new WSearchEditor("M_Product_ID", true, false, true, lookupPRD);
 			fldPRD.addValueChangeListener(this);
 			fldPRD.setReadWrite(true);
-			fldPRD.setValue(null);			
-			
+			fldPRD.setValue(null);
+
 			cellProductSearch.setLabel("");
 			lsComponentProductSearch.add(fldPRD.getComponent());
+
+			 com.ingeint.pos.util.Utils.setWidths(this.dataTable.getListHead(), "3", "28",
+			 "6", "6", "6", "6", "6", "3","3");
+
 			fldPRD.showMenu();
 		}
 
 	}
-	
+
+	private void dataTableOnDoubleClick() {
+
+		final Integer index = this.dataTable.getSelectedIndex();
+		log.warning("estoy en:" + index);
+
+		ListCell cellProductSearch = (ListCell) dataTable.getChildren().get(index + 1).getChildren().get(1);
+		List<Component> lsComponentProductSearch = cellProductSearch.getChildren();
+
+		if (lsComponentProductSearch.size() == 0) {
+			int AD_Column_ID = 2221;
+			MLookup lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID, DisplayType.Search);
+			WSearchEditor fldPRD = new WSearchEditor("M_Product_ID", true, false, true, lookupPRD);
+			fldPRD.addValueChangeListener(this);
+			fldPRD.setReadWrite(true);
+			fldPRD.setValue(null);
+
+			cellProductSearch.setLabel("");
+			lsComponentProductSearch.add(fldPRD.getComponent());
+
+			// com.ingeint.pos.util.Utils.setWidths(this.dataTable.getListHead(), "3", "28",
+			// "6", "6", "6", "6", "6", "3");
+
+			fldPRD.showMenu();
+		}
+
+	}
+
 	@Override
 	public void tableChanged(WTableModelEvent event) {
 
@@ -968,25 +1022,44 @@ public class WPos extends CustomForm
 				model.setDataAt(priceActual.multiply(qtyEntered), row, 6);
 
 			}
-			
+
 			if (column == COLUMNNAME_DELETELINE) {
-				
+
 				log.warning("Toy");
-				
+
 			}
 
 			log.warning("ID De Linea :" + oline.getC_OrderLine_ID());
 		}
-	}	
-	
-	
+	}
 
-	
+	public void insertProductField() {
 
-	
+		final Integer index = this.dataTable.getSelectedIndex();
 
+		ListCell cellProductSearch = (ListCell) dataTable.getChildren().get(index + 1).getChildren().get(1);
+		List<Component> lsComponentProductSearch = cellProductSearch.getChildren();
 
-	
-	
-	
+		if (lsComponentProductSearch.size() == 0) {
+			int AD_Column_ID = 2221;
+			MLookup lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID, DisplayType.Search);
+			WSearchEditor fldPRD = new WSearchEditor("M_Product_ID", true, false, true, lookupPRD);
+			fldPRD.addValueChangeListener(this);
+			fldPRD.setReadWrite(true);
+			fldPRD.setValue(null);
+
+			cellProductSearch.setLabel("");
+			lsComponentProductSearch.add(fldPRD.getComponent());
+			fldPRD.showMenu();
+		}
+	}
+
+	private void refreshContext() {
+
+		Env.setContext(ctx, this.m_WindowNo, "M_PriceList_ID", getM_PriceList_ID());
+		Env.setContext(ctx, this.getWindowNo(), "M_Warehouse_ID", getM_Warehouse_ID());
+		Env.setContext(Env.getCtx(), this.m_WindowNo, "IsSOTrx", "Y");
+
+	}
+
 }

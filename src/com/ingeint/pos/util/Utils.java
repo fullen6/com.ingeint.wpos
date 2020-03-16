@@ -12,13 +12,13 @@ public class Utils {
 	public static final CLogger log = CLogger.getCLogger(Utils.class);
 	
 	 public static void setWidths(final ListHead head, final String... widths) {
-		/*
-		 * for (int i = 0; i < head.getChildren().size(); ++i) { ((HtmlBasedComponent)
-		 * head.getChildren().get(i)).setWidth(widths[i]); if
-		 * (widths[i].matches("[0-9]+")) {
-		 * ZKUpdateUtil.setHflex((HtmlBasedComponent)head.getChildren().get(i),
-		 * widths[i]); } ((Listheader) head.getChildren().get(i)).setSort("auto"); }
-		 */
+		
+		  for (int i = 0; i < head.getChildren().size(); ++i) { ((HtmlBasedComponent)
+		 head.getChildren().get(i)).setWidth(widths[i]); if
+		 (widths[i].matches("[0-9]+")) {
+		 ZKUpdateUtil.setHflex((HtmlBasedComponent)head.getChildren().get(i),
+		 widths[i]); } ((Listheader) head.getChildren().get(i)).setSort("auto"); }
+		 
 	    }
 
 }
