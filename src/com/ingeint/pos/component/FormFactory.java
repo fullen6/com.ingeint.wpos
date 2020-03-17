@@ -19,7 +19,6 @@
 package com.ingeint.pos.component;
 
 import com.ingeint.pos.base.CustomFormFactory;
-import com.ingeint.pos.forms.WHeaderForm;
 import com.ingeint.pos.forms.WPos;
 
 /**
@@ -40,6 +39,5 @@ public class FormFactory extends CustomFormFactory {
 	@Override
 	protected void initialize() {
 		registerForm(WPos.class);
-		registerForm(WHeaderForm.class);
 	}
 }

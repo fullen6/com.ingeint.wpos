@@ -167,6 +167,7 @@ public class WPos extends CustomForm
 	int M_PriceList_ID = 0;
 	int SalesRep_ID = 0;
 	int M_Product_ID = 0;
+	int C_POS_ID = 0;
 
 	Properties ctx = Env.getCtx();
 	int LoginAD_User_ID = Env.getAD_User_ID(ctx);
@@ -237,6 +238,14 @@ public class WPos extends CustomForm
 	public void setSalesRep_ID(int salesRep_ID) {
 		SalesRep_ID = salesRep_ID;
 	}
+	
+	public int getC_POS_ID(){
+		return C_POS_ID;
+	}
+	
+	public void setC_POS_ID(int C_POSID) {
+		C_POS_ID = C_POSID;
+	}
 
 	BigDecimal priceActual = Env.ZERO;
 	BigDecimal qtyEntered = Env.ONE;
@@ -261,6 +270,7 @@ public class WPos extends CustomForm
 		setM_Warehouse_ID(pos.getM_Warehouse_ID());
 		setM_PriceList_ID(pos.getM_PriceList_ID());
 		setSalesRep_ID(pos.getSalesRep_ID());
+		setC_POS_ID(pos.getC_POS_ID());
 
 		refreshContext();
 
@@ -730,7 +740,7 @@ public class WPos extends CustomForm
 
 		this.dataTable.addEventListener("onClick", (EventListener) new EventListener<Event>() {
 			public void onEvent(final Event event) throws Exception {
-				dataTAbleOnCLick ();
+				dataTAbleOnCLick();
 			}
 
 		});
@@ -810,7 +820,7 @@ public class WPos extends CustomForm
 						dataTable.setData(modelOl, columnNames);
 						createLines(product, null);
 					}
-
+					newOrder.load(null);
 					isNew = false;
 					// insertProductField();
 				} catch (IOException e) {
@@ -900,23 +910,21 @@ public class WPos extends CustomForm
 
 	@Override
 	public void onEvent(Event event) throws Exception {
-		String temp = "";
 
 		if (event.getTarget() instanceof Button) {
 
 			if (event.getTarget().equals(btnPrint)) {
 				printOrder(newOrder);
 			} else if (event.getTarget().equals(btnExit)) {
-				this.onClose();
-			} else if (event.getTarget().equals(payButton)) {				
-				
+				this.dispose();
+			} else if (event.getTarget().equals(payButton)) {
+
 				WPayment payWin = new WPayment();
-				AEnv.showWindow(payWin.PaymentWindow());
-				
+				if (newOrder == null)
+					throw new AdempiereException(Msg.translate(ctx, "OrderNotGenerated"));
+				AEnv.showWindow(payWin.PaymentWindow(newOrder, pos));
 			}
-
 		}
-
 	}
 
 	private void printOrder(MOrder order) {
@@ -947,8 +955,8 @@ public class WPos extends CustomForm
 			cellProductSearch.setLabel("");
 			lsComponentProductSearch.add(fldPRD.getComponent());
 
-			 com.ingeint.pos.util.Utils.setWidths(this.dataTable.getListHead(), "3", "28",
-			 "6", "6", "6", "6", "6", "3","3");
+			//com.ingeint.pos.util.Utils.setWidths(this.dataTable.getListHead(), "3", "28", "6", "6", "6", "6", "6", "3",
+			//		"3");
 
 			fldPRD.showMenu();
 		}

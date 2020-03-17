@@ -2,6 +2,7 @@ package com.ingeint.pos.functions;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MOrder;
+import org.compiere.model.MPayment;
 import org.compiere.util.Env;
 import org.compiere.util.Trx;
 
@@ -34,6 +35,8 @@ public class CreateUpdateOrder {
 		order.setM_Warehouse_ID(wp.getM_Warehouse_ID());
 		order.setSalesRep_ID(wp.getSalesRep_ID());
 		order.setM_PriceList_ID(wp.getM_PriceList_ID());
+		order.setPaymentRule("M");
+		order.setC_POS_ID(wp.getC_POS_ID());
 	
 		order.saveEx();
 
