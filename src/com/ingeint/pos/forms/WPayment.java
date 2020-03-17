@@ -49,8 +49,10 @@ import org.zkoss.zul.Space;
 
 import com.ingeint.pos.util.Styles;
 
+
+
 @SuppressWarnings("rawtypes")
-public class WPayment extends Payment implements EventListener {
+public class WPayment implements EventListener {
 
 	private Groupbox groupPanel;
 

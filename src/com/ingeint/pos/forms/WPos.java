@@ -61,6 +61,7 @@ import com.ingeint.pos.functions.CreateUpdateOrder;
 import com.ingeint.pos.functions.PrintOrder;
 import com.ingeint.pos.model.MCustomPOS;
 import com.ingeint.pos.util.Styles;
+import com.ingeint.pos.util.Utils;
 
 public class WPos extends CustomForm
 		implements IFormController, WTableModelListener, ValueChangeListener, EventListener<Event> {
@@ -745,8 +746,8 @@ public class WPos extends CustomForm
 
 		});
 
-		Vector<String> columnNames = com.ingeint.pos.forms.OrderLines.getColumnNames();
-		Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product, M_PriceList_ID, newOrder);
+		Vector<String> columnNames = OrderLines.getColumnNames();
+		Vector<Vector<Object>> data = OrderLines.setOrderLine(product, M_PriceList_ID, newOrder);
 		modelOl = new ListModelTable(data);
 		dataTable.setData(modelOl, columnNames);
 		log.warning("Registros: " + dataTable.getRows());
@@ -755,18 +756,18 @@ public class WPos extends CustomForm
 		log.warning("Registros: " + dataTable.getRows());
 		modelOl.removeFromSelection(7);
 
-		com.ingeint.pos.forms.OrderLines.setTableColumnClass((IMiniTable) this.dataTable);
+		OrderLines.setTableColumnClass((IMiniTable) this.dataTable);
 
 		// insertProductField();
 
-		com.ingeint.pos.util.Utils.setWidths(this.dataTable.getListHead(), "3", "28", "6", "6", "6", "6", "6", "3");
+		Utils.setWidths(this.dataTable.getListHead(), "3", "28", "6", "6", "6", "6", "6", "3");
 
 	}
 
 	public void createLines(MProduct product, MOrder order) throws IOException {
 
-		Vector<String> columnNames = com.ingeint.pos.forms.OrderLines.getColumnNames();
-		Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product, M_PriceList_ID, order);
+		Vector<String> columnNames = OrderLines.getColumnNames();
+		Vector<Vector<Object>> data = OrderLines.setOrderLine(product, M_PriceList_ID, order);
 
 		if (isNew) {
 			modelOl = new ListModelTable(data);
@@ -813,8 +814,8 @@ public class WPos extends CustomForm
 						isForUpdate = true;
 					} else {
 
-						Vector<String> columnNames = com.ingeint.pos.forms.OrderLines.getColumnNames();
-						Vector<Vector<Object>> data = com.ingeint.pos.forms.OrderLines.setOrderLine(product,
+						Vector<String> columnNames = OrderLines.getColumnNames();
+						Vector<Vector<Object>> data = OrderLines.setOrderLine(product,
 								M_PriceList_ID, newOrder);
 						modelOl = new ListModelTable(data);
 						dataTable.setData(modelOl, columnNames);
