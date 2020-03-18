@@ -183,7 +183,7 @@ public class WPos extends CustomForm
 	WSearchEditor fldBP;
 	WSearchEditor fldPR;
 
-	int COLUMNNAME_QTY = 2;
+	int COLUMNNAME_QTY = 3;
 	int COLUMNNAME_PRICE = 4;
 	int COLUMNNAME_DELETELINE = 8;
 
@@ -1008,16 +1008,16 @@ public class WPos extends CustomForm
 
 			// Render now
 			ListModelTable model = (ListModelTable) event.getModel();
-			MOrderLine oline = new MOrderLine(ctx, (int) model.getDataAt(row, 8), null);
+			MOrderLine oline = new MOrderLine(ctx, (int) model.getDataAt(row, 9), null);
 
 			if (column == COLUMNNAME_QTY) { // Updated QtyEntered
-				BigDecimal qty = new BigDecimal(model.getDataAt(row, 2).toString());
+				BigDecimal qty = new BigDecimal(model.getDataAt(row, 3).toString());
 				qtyEntered = qty;
 
-				BigDecimal price = new BigDecimal(model.getDataAt(row, 4).toString());
+				BigDecimal price = new BigDecimal(model.getDataAt(row, 5).toString());
 				priceActual = price.setScale(2, RoundingMode.HALF_UP);
 
-				model.setDataAt(priceActual.multiply(qtyEntered), row, 7);
+				model.setDataAt(priceActual.multiply(qtyEntered), row, 8);
 				oline.setQtyEntered(qtyEntered);
 				BigDecimal totalNetAmt = priceActual.multiply(qtyEntered).setScale(2, RoundingMode.HALF_UP);
 				oline.setLineNetAmt(totalNetAmt);
