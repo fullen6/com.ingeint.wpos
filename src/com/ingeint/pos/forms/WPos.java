@@ -21,6 +21,7 @@ import org.adempiere.webui.component.ListModelTable;
 import org.adempiere.webui.component.ListboxFactory;
 import org.adempiere.webui.component.Row;
 import org.adempiere.webui.component.Rows;
+import org.adempiere.webui.component.Searchbox;
 import org.adempiere.webui.component.Textbox;
 import org.adempiere.webui.component.WListbox;
 import org.adempiere.webui.component.ZkCssHelper;
@@ -736,7 +737,7 @@ public class WPos extends CustomForm
 
 		this.dataTable.addEventListener("onClick", (EventListener) new EventListener<Event>() {
 			public void onEvent(final Event event) throws Exception {
-				dataTAbleOnCLick();
+				dataTableOnCLick();
 			}
 
 		});
@@ -760,24 +761,16 @@ public class WPos extends CustomForm
 	}
 
 	public void createLines(MProduct product, MOrder order) throws IOException {
-
 		Vector<String> columnNames = OrderLines.getColumnNames();
 		Vector<Vector<Object>> data = OrderLines.setOrderLine(product, M_PriceList_ID, order);
-
-		if (isNew) {
-			modelOl = new ListModelTable(data);
-			dataTable.setData(modelOl, columnNames);
-			log.warning("Registros: " + dataTable.getRows());
-			modelOl.addTableModelListener(this);
-			dataTable.getModel().addTableModelListener(this);
-			log.warning("Registros: " + dataTable.getRows());
-			modelOl.removeFromSelection(7);
-			isNew = false;
-
-		} else {
-			modelOl.addAll(data);
-			modelOl.removeFromSelection(7);
-		}
+		Vector<Vector<Object>> nullData = OrderLines.setOrderLine(null, 0, null);
+		data.add(nullData.get(0));
+		
+		modelOl = new ListModelTable(data);
+		dataTable.setData(modelOl, columnNames);
+		modelOl.addTableModelListener(this);
+		dataTable.getModel().addTableModelListener(this);
+		isNew = false;
 
 		product = null;
 	}
@@ -802,44 +795,13 @@ public class WPos extends CustomForm
 
 				MProduct product = new MProduct(ctx, (Integer.valueOf(evt.getNewValue().toString())), null);
 
-				try {									
+				try {
 
-					if (!isForUpdate) {
-						createLines(product, newOrder);
-						createLines(product, null);
-						isForUpdate = true;
-					} else {
-						Vector<String> columnNames = OrderLines.getColumnNames();
-						Vector<Vector<Object>> data = OrderLines.setOrderLine(product, M_PriceList_ID, newOrder);
-						modelOl = new ListModelTable(data);
-						dataTable.setData(modelOl, columnNames);
-						createLines(product, null);
-					}
+					createLines(product, newOrder);
+
 					newOrder.load(null);
 					isNew = false;
-					
-					// TEST
-					
-					/*
-					 * final Integer index = this.dataTable.getSelectedIndex();
-					 * log.warning("estoy en:" + index);
-					 * 
-					 * ListCell cellProductSearch = (ListCell) dataTable.getChildren().get(index +
-					 * 1).getChildren().get(1); List<Component> lsComponentProductSearch =
-					 * cellProductSearch.getChildren();
-					 * 
-					 * if (lsComponentProductSearch.size() == 0) { int AD_Column_ID = 2221; MLookup
-					 * lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID,
-					 * DisplayType.Search); WSearchEditor fldPRD = new WSearchEditor("M_Product_ID",
-					 * true, false, true, lookupPRD); fldPRD.addValueChangeListener(this);
-					 * fldPRD.setReadWrite(true); fldPRD.setValue(product.getM_Product_ID());
-					 * 
-					 * cellProductSearch.setLabel("");
-					 * lsComponentProductSearch.add(fldPRD.getComponent()); }
-					 */
-					
-					
-					// TEST
+
 					Utils.setWidths(this.dataTable.getListHead(), "8", "28", "12", "12", "12", "12", "12", "12", "1");
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -989,7 +951,6 @@ public class WPos extends CustomForm
 		initializeData();
 		clearForm();
 
-
 	}
 
 	private void printOrder(MOrder order) {
@@ -1001,55 +962,34 @@ public class WPos extends CustomForm
 		po.printPOSOrder(order);
 	}
 
-	private void dataTAbleOnCLick() {
-
+	private void dataTableOnCLick() {
 		final Integer index = this.dataTable.getSelectedIndex();
-		log.warning("estoy en:" + index);
 
-		ListCell cellProductSearch = (ListCell) dataTable.getChildren().get(index + 1).getChildren().get(1);
+		if (index < 0) {
+			return;
+		}
+
+		List<Component> children = dataTable.getChildren().get(index + 1).getChildren();
+		ListCell cellProductSearch = (ListCell) children.get(1);
 		List<Component> lsComponentProductSearch = cellProductSearch.getChildren();
 
 		if (lsComponentProductSearch.size() == 0) {
 			int AD_Column_ID = 2221;
-			MLookup lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID, DisplayType.Search);
+			MLookup lookupPRD = MLookupFactory.get(ctx, 0, 0, AD_Column_ID, DisplayType.Search);
 			WSearchEditor fldPRD = new WSearchEditor("M_Product_ID", true, false, true, lookupPRD);
 			fldPRD.addValueChangeListener(this);
 			fldPRD.setReadWrite(true);
 			fldPRD.setValue(null);
-
-			cellProductSearch.setLabel("");
-			lsComponentProductSearch.add(fldPRD.getComponent());
-
-			//Utils.setWidths(this.dataTable.getListHead(), "8", "28", "12", "12", "12", "12", "12", "12", "1");
-			fldPRD.showMenu();
-			
+			Searchbox searchbox = fldPRD.getComponent();
+			searchbox.setHflex(null);
+			searchbox.setWidth("96%");
+			lsComponentProductSearch.add(searchbox);
 		}
 
 	}
 
 	private void dataTableOnDoubleClick() {
-
-		final Integer index = this.dataTable.getSelectedIndex();
-		log.warning("estoy en:" + index);
-
-		ListCell cellProductSearch = (ListCell) dataTable.getChildren().get(index + 1).getChildren().get(1);
-		List<Component> lsComponentProductSearch = cellProductSearch.getChildren();
-
-		if (lsComponentProductSearch.size() == 0) {
-			int AD_Column_ID = 2221;
-			MLookup lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID, DisplayType.Search);
-			WSearchEditor fldPRD = new WSearchEditor("M_Product_ID", true, false, true, lookupPRD);
-			fldPRD.addValueChangeListener(this);
-			fldPRD.setReadWrite(true);
-			fldPRD.setValue(null);
-
-			cellProductSearch.setLabel("");
-			lsComponentProductSearch.add(fldPRD.getComponent());	
-			
-
-			fldPRD.showMenu();
-		}
-
+		dataTableOnCLick();
 	}
 
 	@Override
@@ -1105,27 +1045,6 @@ public class WPos extends CustomForm
 		}
 	}
 
-	public void insertProductField() {
-
-		final Integer index = this.dataTable.getSelectedIndex();
-
-		ListCell cellProductSearch = (ListCell) dataTable.getChildren().get(index + 1).getChildren().get(1);
-		List<Component> lsComponentProductSearch = cellProductSearch.getChildren();
-
-		if (lsComponentProductSearch.size() == 0) {
-			int AD_Column_ID = 2221;
-			MLookup lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID, DisplayType.Search);
-			WSearchEditor fldPRD = new WSearchEditor("M_Product_ID", true, false, true, lookupPRD);
-			fldPRD.addValueChangeListener(this);
-			fldPRD.setReadWrite(true);
-			fldPRD.setValue(null);
-
-			cellProductSearch.setLabel("");
-			lsComponentProductSearch.add(fldPRD.getComponent());
-			fldPRD.showMenu();
-		}
-	}
-
 	private void initializeData() throws Exception {
 
 		newOrder = null;
@@ -1153,11 +1072,11 @@ public class WPos extends CustomForm
 
 		isNew = true;
 		newOrder = null;
-		
+
 		lkOrder = new DocumentLink(Msg.translate(ctx, "New"), MOrder.Table_ID, 0);
 		lkOrder.setLabel("New");
 		lkOrder.setRecordId(0);
-		
+
 		fldOR.setValue(getAD_Org_ID());
 		fldBP.setValue(null);
 		fldDT.setValue(getC_DocType_ID());

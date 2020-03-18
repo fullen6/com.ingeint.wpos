@@ -42,15 +42,15 @@ public class OrderLines {
 
 	public static void setTableColumnClass(final IMiniTable table) {
 		int i = 0;
-		table.setColumnClass(i++, (Class) Boolean.class, false);
-		table.setColumnClass(i++, (Class) Integer.class, true);
-		table.setColumnClass(i++, (Class) BigDecimal.class, false);
-		table.setColumnClass(i++, (Class) String.class, true);
-		table.setColumnClass(i++, (Class) BigDecimal.class, true);
-		table.setColumnClass(i++, (Class) BigDecimal.class, false);
-		table.setColumnClass(i++, (Class) BigDecimal.class, true);
-		table.setColumnClass(i++, (Class) BigDecimal.class, true);
-		table.setColumnClass(i++, (Class) Integer.class, true);
+		table.setColumnClass(i++, Boolean.class, false);
+		table.setColumnClass(i++, Integer.class, true);
+		table.setColumnClass(i++, BigDecimal.class, false);
+		table.setColumnClass(i++, String.class, true);
+		table.setColumnClass(i++, BigDecimal.class, true);
+		table.setColumnClass(i++, BigDecimal.class, false);
+		table.setColumnClass(i++, BigDecimal.class, true);
+		table.setColumnClass(i++, BigDecimal.class, true);
+		table.setColumnClass(i++, Integer.class, true);
 
 		table.autoSize();
 
@@ -62,26 +62,31 @@ public class OrderLines {
 		Vector<Vector<Object>> data = new Vector<Vector<Object>>();
 
 		if (order != null) {
-			
-			MOrderLine oline = createOrderLine(order, product.getM_Product_ID());
-			BigDecimal priceEntered = oline.getPriceEntered();
-			priceEntered = priceEntered.round(new MathContext(2));
-			BigDecimal taxAmt = oline.getPriceEntered().multiply((oline.getC_Tax().getRate().divide(Env.ONEHUNDRED)));
-			taxAmt = taxAmt.round(new MathContext(5));
-			taxAmt = taxAmt.setScale(2, RoundingMode.HALF_UP);
 
-			Vector<Object> line = new Vector<Object>();
-			line.add(true);
-			line.add(product.getValue() + "_" + product.getName());
-			line.add(Env.ONE);
-			line.add("Unidad");
-			line.add(priceEntered);
-			line.add(Env.ZERO);
-			line.add(taxAmt);
-			line.add(priceEntered);
-			line.add(oline.getC_OrderLine_ID());
-			data.add(line);
+			createOrderLine(order, product.getM_Product_ID());
+			MOrderLine[] lines = order.getLines(true, null);
 
+			for (MOrderLine oline : lines) {
+				BigDecimal priceEntered = oline.getPriceEntered();
+				priceEntered = priceEntered.round(new MathContext(2));
+				BigDecimal taxAmt = oline.getPriceEntered()
+						.multiply((oline.getC_Tax().getRate().divide(Env.ONEHUNDRED)));
+				taxAmt = taxAmt.round(new MathContext(5));
+				taxAmt = taxAmt.setScale(2, RoundingMode.HALF_UP);
+
+				MProduct mProduct = oline.getProduct();
+				Vector<Object> line = new Vector<Object>();
+				line.add(true);
+				line.add(mProduct.getValue() + "_" + mProduct.getName());
+				line.add(Env.ONE);
+				line.add("Unidad");
+				line.add(priceEntered);
+				line.add(Env.ZERO);
+				line.add(taxAmt);
+				line.add(priceEntered);
+				line.add(oline.getC_OrderLine_ID());
+				data.add(line);
+			}
 		} else {
 
 			Vector<Object> line = new Vector<Object>();
@@ -95,7 +100,7 @@ public class OrderLines {
 			line.add(Env.ZERO);
 			line.add(null);
 			data.add(line);
-		}		
+		}
 
 		return data;
 	}
