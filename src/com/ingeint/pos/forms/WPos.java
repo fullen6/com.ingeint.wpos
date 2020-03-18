@@ -528,10 +528,6 @@ public class WPos extends CustomForm
 		this.lblSalesRep.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "SalesRep_ID")).toString());
 		this.lblCredit.setText(Msg.translate(Env.getCtx(), "Credits"));
 
-		// this.productLabel.setText(new
-		// StringBuilder().append(Msg.translate(Env.getCtx(),
-		// "C_OrderLine_ID")).toString());
-		// this.productTextBox.addEventListener("onBlur", (EventListener) this);
 		this.lblTotal.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "Total")).toString());
 		this.subTotalLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "SubTotal")).toString());
 		this.lblTax.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_Tax_ID")).toString());
@@ -756,7 +752,7 @@ public class WPos extends CustomForm
 
 		Utils.setWidths(this.dataTable.getListHead(), "8", "28", "12", "12", "12", "12", "12", "12", "1");
 
-		// insertProductField();
+		refreshContext();
 
 	}
 
@@ -770,6 +766,7 @@ public class WPos extends CustomForm
 		dataTable.setData(modelOl, columnNames);
 		modelOl.addTableModelListener(this);
 		dataTable.getModel().addTableModelListener(this);
+		dataTable.setFocus(true);
 		isNew = false;
 
 		product = null;
@@ -779,6 +776,8 @@ public class WPos extends CustomForm
 	public void valueChange(ValueChangeEvent evt) {
 
 		if (evt.getPropertyName().equals(MOrderLine.COLUMNNAME_M_Product_ID)) {
+			
+			
 
 			// New Order
 			if (isNew) {
@@ -787,7 +786,7 @@ public class WPos extends CustomForm
 
 				lkOrder.setLabel(newOrder.getDocumentNo());
 				lkOrder.setRecordId(newOrder.get_ID());
-				dataTable.clear();
+				//dataTable.clear();
 
 			}
 
@@ -873,7 +872,7 @@ public class WPos extends CustomForm
 			}
 		}
 
-		refreshContext();
+		
 	}
 
 	public void updateTotal(MOrderLine oline) {
@@ -975,7 +974,7 @@ public class WPos extends CustomForm
 
 		if (lsComponentProductSearch.size() == 0) {
 			int AD_Column_ID = 2221;
-			MLookup lookupPRD = MLookupFactory.get(ctx, 0, 0, AD_Column_ID, DisplayType.Search);
+			MLookup lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID, DisplayType.Search);
 			WSearchEditor fldPRD = new WSearchEditor("M_Product_ID", true, false, true, lookupPRD);
 			fldPRD.addValueChangeListener(this);
 			fldPRD.setReadWrite(true);
@@ -1055,17 +1054,14 @@ public class WPos extends CustomForm
 		setM_Warehouse_ID(pos.getM_Warehouse_ID());
 		setM_PriceList_ID(pos.getM_PriceList_ID());
 		setSalesRep_ID(pos.getSalesRep_ID());
-		setC_POS_ID(pos.getC_POS_ID());
-
-		refreshContext();
+		setC_POS_ID(pos.getC_POS_ID());		
 	}
 
 	private void refreshContext() {
 
-		Env.setContext(ctx, this.m_WindowNo, "M_PriceList_ID", getM_PriceList_ID());
+		Env.setContext(ctx, this.getWindowNo(), "M_PriceList_ID", getM_PriceList_ID());
 		Env.setContext(ctx, this.getWindowNo(), "M_Warehouse_ID", getM_Warehouse_ID());
-		Env.setContext(Env.getCtx(), this.m_WindowNo, "IsSOTrx", "Y");
-
+		Env.setContext(ctx, this.m_WindowNo, "IsSOTrx", "Y");
 	}
 
 	private void clearForm() throws IOException {
