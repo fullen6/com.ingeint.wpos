@@ -43,7 +43,7 @@ public class OrderLines {
 	public static void setTableColumnClass(final IMiniTable table) {
 		int i = 0;
 		table.setColumnClass(i++, (Class) Boolean.class, false);
-		table.setColumnClass(i++, (Class) String.class, true);
+		table.setColumnClass(i++, (Class) Integer.class, true);
 		table.setColumnClass(i++, (Class) BigDecimal.class, false);
 		table.setColumnClass(i++, (Class) String.class, true);
 		table.setColumnClass(i++, (Class) BigDecimal.class, true);
@@ -62,6 +62,7 @@ public class OrderLines {
 		Vector<Vector<Object>> data = new Vector<Vector<Object>>();
 
 		if (order != null) {
+			
 			MOrderLine oline = createOrderLine(order, product.getM_Product_ID());
 			BigDecimal priceEntered = oline.getPriceEntered();
 			priceEntered = priceEntered.round(new MathContext(2));

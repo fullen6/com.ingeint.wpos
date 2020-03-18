@@ -771,11 +771,12 @@ public class WPos extends CustomForm
 			modelOl.addTableModelListener(this);
 			dataTable.getModel().addTableModelListener(this);
 			log.warning("Registros: " + dataTable.getRows());
-			// Object obj = new Object[] { 0, 6 };
 			modelOl.removeFromSelection(7);
+			isNew = false;
 
 		} else {
 			modelOl.addAll(data);
+			modelOl.removeFromSelection(7);
 		}
 
 		product = null;
@@ -793,6 +794,7 @@ public class WPos extends CustomForm
 
 				lkOrder.setLabel(newOrder.getDocumentNo());
 				lkOrder.setRecordId(newOrder.get_ID());
+				dataTable.clear();
 
 			}
 
@@ -800,14 +802,13 @@ public class WPos extends CustomForm
 
 				MProduct product = new MProduct(ctx, (Integer.valueOf(evt.getNewValue().toString())), null);
 
-				try {
+				try {									
 
 					if (!isForUpdate) {
 						createLines(product, newOrder);
 						createLines(product, null);
 						isForUpdate = true;
 					} else {
-
 						Vector<String> columnNames = OrderLines.getColumnNames();
 						Vector<Vector<Object>> data = OrderLines.setOrderLine(product, M_PriceList_ID, newOrder);
 						modelOl = new ListModelTable(data);
@@ -816,8 +817,30 @@ public class WPos extends CustomForm
 					}
 					newOrder.load(null);
 					isNew = false;
+					
+					// TEST
+					
+					/*
+					 * final Integer index = this.dataTable.getSelectedIndex();
+					 * log.warning("estoy en:" + index);
+					 * 
+					 * ListCell cellProductSearch = (ListCell) dataTable.getChildren().get(index +
+					 * 1).getChildren().get(1); List<Component> lsComponentProductSearch =
+					 * cellProductSearch.getChildren();
+					 * 
+					 * if (lsComponentProductSearch.size() == 0) { int AD_Column_ID = 2221; MLookup
+					 * lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID,
+					 * DisplayType.Search); WSearchEditor fldPRD = new WSearchEditor("M_Product_ID",
+					 * true, false, true, lookupPRD); fldPRD.addValueChangeListener(this);
+					 * fldPRD.setReadWrite(true); fldPRD.setValue(product.getM_Product_ID());
+					 * 
+					 * cellProductSearch.setLabel("");
+					 * lsComponentProductSearch.add(fldPRD.getComponent()); }
+					 */
+					
+					
+					// TEST
 					Utils.setWidths(this.dataTable.getListHead(), "8", "28", "12", "12", "12", "12", "12", "12", "1");
-					// insertProductField();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -999,6 +1022,7 @@ public class WPos extends CustomForm
 
 			//Utils.setWidths(this.dataTable.getListHead(), "8", "28", "12", "12", "12", "12", "12", "12", "1");
 			fldPRD.showMenu();
+			
 		}
 
 	}
