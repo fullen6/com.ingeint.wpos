@@ -750,7 +750,7 @@ public class WPos extends CustomForm
 
 		OrderLines.setTableColumnClass((IMiniTable) this.dataTable);
 
-		Utils.setWidths(this.dataTable.getListHead(), "8", "28", "12", "12", "12", "12", "12", "12", "1");
+		Utils.setWidths(this.dataTable.getListHead(), "8", "32", "16" ,"12", "12", "12", "12", "12", "12", "1");
 
 		refreshContext();
 
@@ -801,7 +801,7 @@ public class WPos extends CustomForm
 					newOrder.load(null);
 					isNew = false;
 
-					Utils.setWidths(this.dataTable.getListHead(), "8", "28", "12", "12", "12", "12", "12", "12", "1");
+					Utils.setWidths(this.dataTable.getListHead(), "8", "30","16", "12", "12", "12", "12", "12", "12", "1");
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -1089,7 +1089,7 @@ public class WPos extends CustomForm
 		Vector<Vector<Object>> data = OrderLines.setOrderLine(product, M_PriceList_ID, newOrder);
 		modelOl = new ListModelTable(data);
 		dataTable.setData(modelOl, columnNames);
-		Utils.setWidths(this.dataTable.getListHead(), "8", "28", "12", "12", "12", "12", "12", "12", "1");
+		Utils.setWidths(this.dataTable.getListHead(), "8", "28", "16", "12", "12", "12", "12", "12", "12", "1");
 	}
 
 }

@@ -11,6 +11,7 @@ import org.compiere.minigrid.IMiniTable;
 import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
+import org.compiere.model.MStorageOnHand;
 import org.compiere.util.CLogger;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
@@ -29,6 +30,7 @@ public class OrderLines {
 		Vector<String> columnNames = new Vector<String>();
 		columnNames.add(Msg.translate(Env.getCtx(), "Select"));
 		columnNames.add(Msg.translate(Env.getCtx(), MOrderLine.COLUMNNAME_M_Product_ID));
+		columnNames.add(Msg.translate(Env.getCtx(), MStorageOnHand.COLUMNNAME_QtyOnHand));
 		columnNames.add(Msg.translate(Env.getCtx(), MOrderLine.COLUMNNAME_QtyEntered));
 		columnNames.add(Msg.translate(Env.getCtx(), MOrderLine.COLUMNNAME_C_UOM_ID));
 		columnNames.add(Msg.translate(Env.getCtx(), MOrderLine.COLUMNNAME_PriceEntered));
@@ -44,7 +46,8 @@ public class OrderLines {
 		int i = 0;
 		table.setColumnClass(i++, Boolean.class, false);
 		table.setColumnClass(i++, Integer.class, true);
-		table.setColumnClass(i++, BigDecimal.class, false);
+		table.setColumnClass(i++, BigDecimal.class, true);		
+		table.setColumnClass(i++, BigDecimal.class, true);
 		table.setColumnClass(i++, String.class, true);
 		table.setColumnClass(i++, BigDecimal.class, true);
 		table.setColumnClass(i++, BigDecimal.class, false);
@@ -73,11 +76,17 @@ public class OrderLines {
 						.multiply((oline.getC_Tax().getRate().divide(Env.ONEHUNDRED)));
 				taxAmt = taxAmt.round(new MathContext(5));
 				taxAmt = taxAmt.setScale(2, RoundingMode.HALF_UP);
+				BigDecimal stockOnhand = MStorageOnHand.getQtyOnHand(product.getM_Product_ID(), order.getM_Warehouse_ID(),
+						0, product.get_TrxName());
+				
+				if (stockOnhand == null)
+					stockOnhand = Env.ZERO;				
 
 				MProduct mProduct = oline.getProduct();
 				Vector<Object> line = new Vector<Object>();
 				line.add(true);
 				line.add(mProduct.getValue() + "_" + mProduct.getName());
+				line.add(stockOnhand);
 				line.add(Env.ONE);
 				line.add("Unidad");
 				line.add(priceEntered);
@@ -92,6 +101,7 @@ public class OrderLines {
 			Vector<Object> line = new Vector<Object>();
 			line.add(true);
 			line.add("");
+			line.add(Env.ZERO);
 			line.add(Env.ONE);
 			line.add("Unidad");
 			line.add(Env.ZERO);
