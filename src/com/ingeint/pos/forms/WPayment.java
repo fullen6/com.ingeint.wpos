@@ -36,16 +36,13 @@ import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.KeyNamePair;
 import org.compiere.util.Msg;
-import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.event.Events;
 import org.zkoss.zul.Center;
-import org.zkoss.zul.Groupbox;
 import org.zkoss.zul.Hlayout;
 import org.zkoss.zul.North;
 import org.zkoss.zul.South;
-import org.zkoss.zul.Space;
 
 import com.ingeint.pos.util.Styles;
 
@@ -54,20 +51,12 @@ import com.ingeint.pos.util.Styles;
 @SuppressWarnings("rawtypes")
 public class WPayment implements EventListener {
 
-	private Groupbox groupPanel;
 
 	MOrder newOrder = null;
 
 	MPOS wpos = null;
-
-	/** Default Font */
-	private final String FONT_SIZE = "Font-size:medium;";
-	/** Default Width */
-	private final String HEIGHT = "height:33px;";
-	/** Default Height */
-	private final String WIDTH = "width:149px;";
-
-	private Button bMinus;
+	
+	WPos formPOS = null;
 
 	private Button btnCancelPayment;
 
@@ -82,10 +71,6 @@ public class WPayment implements EventListener {
 	ArrayList<ArrayList<Object>> dataPaymentID;
 	Vector<Vector<Object>> dataPayment;
 
-	private Component space = (Component) new Space();
-
-	private Label lblTotalAmt;
-	private Label lblAmt;
 
 	WListbox lstPaymetSelect;
 
@@ -113,10 +98,11 @@ public class WPayment implements EventListener {
 
 	Styles st = new Styles();
 
-	public Window PaymentWindow(MOrder order, MPOS pos) throws Exception {
+	public Window PaymentWindow(MOrder order, MPOS pos, WPos FormPOS) throws Exception {
 
 		newOrder = order;
 		wpos = pos;
+		formPOS = FormPOS;
 		vlTotal = new Label();
 		vlTotal.setText(newOrder.getGrandTotal().toString());
 
@@ -125,7 +111,7 @@ public class WPayment implements EventListener {
 		return this.selection;
 	}
 
-	private void ProcessPayment(int mOrder, MPOS wpos) {
+	private void ProcessPayment(int mOrder, MPOS wpos, WPos formPOS) {
 
 		BigDecimal AmtTotalPayment = new BigDecimal(vlTotal.getValue());
 		BigDecimal AmtTotalPaymentTemp = new BigDecimal(txtTotalPayAmt.getValue());
@@ -171,8 +157,10 @@ public class WPayment implements EventListener {
 		}
 		AmtTotal = AmtTotalPayment.subtract(AmtTotal);
 		
-		if(AmtTotal.equals(new BigDecimal("0.00")))
+		if(AmtTotal.equals(new BigDecimal("0.00"))) {
+			formPOS.setOpenAmt(Env.ZERO);
 			selection.dispose();
+		}			
 
 		loadTenderType();
 
@@ -248,7 +236,7 @@ public class WPayment implements EventListener {
 		Vector<String> columnNames = new Vector<String>();
 
 		mTable.setColumnClass(i++, Integer.class, true);
-		columnNames.add(Msg.getMsg(ctx, "Line"));
+		columnNames.add(Msg.translate(ctx, "Line"));
 
 		mTable.setColumnClass(i++, String.class, true);
 		columnNames.add(Msg.getMsg(ctx, "payment.type").replace("&", ""));
@@ -536,6 +524,8 @@ public class WPayment implements EventListener {
 			if (event.getTarget().equals(btnCancelPayment)) {
 				
 				DB.executeUpdate("DELETE FROM C_POSPayment WHERE C_Order_ID = ? ", newOrder.getC_Order_ID(), null);
+				
+				formPOS.setOpenAmt(newOrder.getGrandTotal());
 
 				selection.dispose();
 
@@ -555,7 +545,7 @@ public class WPayment implements EventListener {
 					throw new AdempiereException("Debe seleccionar una Autorización No.");
 				}
 
-				ProcessPayment(newOrder.getC_Order_ID(), wpos);
+				ProcessPayment(newOrder.getC_Order_ID(), wpos, formPOS);
 			}
 
 		}
