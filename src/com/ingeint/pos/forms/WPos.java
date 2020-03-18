@@ -537,23 +537,23 @@ public class WPos extends CustomForm
 
 		this.btnProcess.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Validate")).toString());
 		this.btnProcess.addEventListener(Events.ON_CLICK, this);
-		this.btnProcess.setImage(ThemeManager.getThemeResource("images/Process24.png"));
+		//this.btnProcess.setImage(ThemeManager.getThemeResource("images/Process24.png"));
 		this.btnProcess.setStyle(st.getBigButtomStyle());
 
 		this.btnExit.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Logout")).toString());
 		this.btnExit.addEventListener(Events.ON_CLICK, this);
-		this.btnExit.setImage(ThemeManager.getThemeResource("images/Previous24.png"));
+		//this.btnExit.setImage(ThemeManager.getThemeResource("images/Previous24.png"));
 		this.btnExit.setStyle(st.getBigButtomStyle());
 
 		this.btnPrint
 				.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Print")).toString().replace("&", ""));
 		this.btnPrint.addEventListener(Events.ON_CLICK, this);
-		this.btnPrint.setImage(ThemeManager.getThemeResource("images/Print24.png"));
+		//this.btnPrint.setImage(ThemeManager.getThemeResource("images/Print24.png"));
 		this.btnPrint.setStyle(st.getBigButtomStyle());
 
 		final Hbox cbuttons = new Hbox();
 		this.payButton.setStyle(st.getBigButtomStyle());
-		this.payButton.setImage(ThemeManager.getThemeResource("images/Payment24.png"));
+		//this.payButton.setImage(ThemeManager.getThemeResource("images/Payment24.png"));
 		this.payButton.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "C_Payment_ID")).toString());
 		this.payButton.addEventListener(Events.ON_CLICK, this);
 
@@ -561,7 +561,7 @@ public class WPos extends CustomForm
 		orderSearch.setLabel(Msg.getMsg(ctx, "search") + " " + Msg.getMsg(ctx, "sales.order"));
 		orderSearch.addEventListener(Events.ON_CLICK, this);
 		orderSearch.setWidth("80%");
-		orderSearch.setImage(ThemeManager.getThemeResource("images/Find24.png"));
+		//orderSearch.setImage(ThemeManager.getThemeResource("images/Find24.png"));
 		orderSearch.setTooltiptext(Msg.getMsg(ctx, "Import") + " " + Msg.getMsg(ctx, "sales.order"));
 		orderSearch.setStyle(st.getBigButtomStyle());
 
