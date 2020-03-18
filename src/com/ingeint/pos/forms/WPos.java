@@ -760,7 +760,8 @@ public class WPos extends CustomForm
 		Vector<String> columnNames = OrderLines.getColumnNames();
 		Vector<Vector<Object>> data = OrderLines.setOrderLine(product, M_PriceList_ID, order);
 		Vector<Vector<Object>> nullData = OrderLines.setOrderLine(null, 0, null);
-		data.add(nullData.get(0));
+		Vector<Object> emptyRow = nullData.get(0);
+		data.add(emptyRow);
 		
 		modelOl = new ListModelTable(data);
 		dataTable.setData(modelOl, columnNames);
@@ -770,6 +771,8 @@ public class WPos extends CustomForm
 		isNew = false;
 
 		product = null;
+		dataTable.setSelectedIndex(data.indexOf(emptyRow));
+		Events.postEvent(Events.ON_CLICK, dataTable, null);
 	}
 
 	@Override
@@ -983,6 +986,7 @@ public class WPos extends CustomForm
 			searchbox.setHflex(null);
 			searchbox.setWidth("96%");
 			lsComponentProductSearch.add(searchbox);
+			searchbox.setFocus(true);
 		}
 
 	}
