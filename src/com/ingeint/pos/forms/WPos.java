@@ -1023,9 +1023,9 @@ public class WPos extends CustomForm
 
 				BigDecimal price = new BigDecimal(model.getDataAt(row, 5).toString());
 				priceActual = price.setScale(2, RoundingMode.HALF_UP);
-
-				model.setDataAt(priceActual.multiply(qtyEntered), row, 8);
+				
 				oline.setQtyEntered(qtyEntered);
+				oline.setQtyOrdered(qtyEntered);
 				BigDecimal totalNetAmt = priceActual.multiply(qtyEntered).setScale(2, RoundingMode.HALF_UP);
 				oline.setLineNetAmt(totalNetAmt);
 				oline.saveEx();
@@ -1033,16 +1033,16 @@ public class WPos extends CustomForm
 				oline.load(null);
 				newOrder.load(null);
 				updateTotal(oline);
+				
+				model.setDataAt(priceActual.multiply(qtyEntered), row, 8);
 
 			}
 
 			if (column == COLUMNNAME_PRICE) { // Price updated
 
-				BigDecimal price = new BigDecimal(model.getDataAt(row, 4).toString());
+				BigDecimal price = new BigDecimal(model.getDataAt(row, 5).toString());
 				priceActual = price;
-
-				model.setDataAt(priceActual.multiply(qtyEntered), row, 6);
-
+				model.setDataAt(priceActual.multiply(qtyEntered), row, 8);
 			}
 
 			if (column == COLUMNNAME_DELETELINE) {
