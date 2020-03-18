@@ -19,6 +19,7 @@ import org.adempiere.webui.component.Label;
 import org.adempiere.webui.component.ListCell;
 import org.adempiere.webui.component.ListModelTable;
 import org.adempiere.webui.component.ListboxFactory;
+import org.adempiere.webui.component.NumberBox;
 import org.adempiere.webui.component.Row;
 import org.adempiere.webui.component.Rows;
 import org.adempiere.webui.component.Searchbox;
@@ -505,7 +506,7 @@ public class WPos extends CustomForm
 		this.tLineButtons.setWidths("20%,5%,10%,5%,10%,10%,20%");
 		this.vmainLayout.appendChild((Component) this.pcustLayout);
 		this.pcustLayout.appendChild((Component) this.custLayout);
-		this.vmainLayout.appendChild((Component) this.pprodLayout);
+		//this.vmainLayout.appendChild((Component) this.pprodLayout);
 		this.pprodLayout.appendChild((Component) this.prodLayout);
 		this.vmainLayout.appendChild((Component) this.pgLayout);
 		this.pgLayout.appendChild((Component) overGLayout);
@@ -667,9 +668,7 @@ public class WPos extends CustomForm
 		// OrderLines
 		this.dataTable.setStyle(
 				"div.z-grid-header { background: none repeat scroll 0 0 #FFFFFF; border: 1px solid #CFCFCF; overflow: hidden; }");
-		this.dataTable.setClass(
-				"div.z-grid-header { background: none repeat scroll 0 0 #FFFFFF; border: 1px solid #CFCFCF; overflow: hidden; }");
-		this.barLayout.setWidth("250px");
+			this.barLayout.setWidth("250px");
 		this.dsLayout.setStyle(st.getLabelStype());
 
 		this.dsLayout.setAlign("end");
@@ -750,7 +749,7 @@ public class WPos extends CustomForm
 
 		OrderLines.setTableColumnClass((IMiniTable) this.dataTable);
 
-		Utils.setWidths(this.dataTable.getListHead(), "8", "32", "16" ,"12", "12", "12", "12", "12", "12", "1");
+		Utils.setWidths(this.dataTable.getListHead(), "8", "30", "16" ,"11", "11", "11", "11", "11", "11", "11");
 
 		refreshContext();
 
@@ -770,9 +769,11 @@ public class WPos extends CustomForm
 		dataTable.setFocus(true);
 		isNew = false;
 
-		product = null;
+		product = null;		
+		
 		dataTable.setSelectedIndex(data.indexOf(emptyRow));
 		Events.postEvent(Events.ON_CLICK, dataTable, null);
+		Events.postEvent(Events.ON_CHANGE, dataTable, data.indexOf(emptyRow)-1);
 	}
 
 	@Override
@@ -927,6 +928,13 @@ public class WPos extends CustomForm
 				}
 
 			}
+		}else if (event.getTarget() instanceof WListbox){
+			int index = (int) event.getData();
+			List<Component> children = dataTable.getChildren().get(index + 1).getChildren();
+			ListCell cellQuantity = (ListCell) children.get(3);
+			List<Component> componentsCellQuantity = cellQuantity.getChildren();
+			NumberBox quantity = (NumberBox) componentsCellQuantity.get(0);
+			quantity.setFocus(true);
 		}
 	}
 
@@ -986,7 +994,6 @@ public class WPos extends CustomForm
 			searchbox.setHflex(null);
 			searchbox.setWidth("96%");
 			lsComponentProductSearch.add(searchbox);
-			searchbox.setFocus(true);
 		}
 
 	}

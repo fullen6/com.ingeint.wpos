@@ -47,7 +47,7 @@ public class OrderLines {
 		table.setColumnClass(i++, Boolean.class, false);
 		table.setColumnClass(i++, Integer.class, true);
 		table.setColumnClass(i++, BigDecimal.class, true);		
-		table.setColumnClass(i++, BigDecimal.class, true);
+		table.setColumnClass(i++, BigDecimal.class, false);
 		table.setColumnClass(i++, String.class, true);
 		table.setColumnClass(i++, BigDecimal.class, true);
 		table.setColumnClass(i++, BigDecimal.class, false);
