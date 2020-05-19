@@ -43,6 +43,7 @@ import org.compiere.model.MLookup;
 import org.compiere.model.MLookupFactory;
 import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
+import org.compiere.model.MPayment;
 import org.compiere.model.MProduct;
 import org.compiere.process.DocAction;
 import org.compiere.util.CLogger;
@@ -173,6 +174,9 @@ public class WPos extends CustomForm
 	int SalesRep_ID = 0;
 	int M_Product_ID = 0;
 	int C_POS_ID = 0;
+	String PaymentRule = "";
+
+	
 
 	BigDecimal openAmt = Env.ZERO;
 
@@ -252,6 +256,14 @@ public class WPos extends CustomForm
 
 	public void setC_POS_ID(int C_POSID) {
 		C_POS_ID = C_POSID;
+	}
+	
+	public String getPaymentRule() {
+		return PaymentRule;
+	}
+
+	public void setPaymentRule(String paymentRule) {
+		PaymentRule = paymentRule;
 	}
 
 	public BigDecimal getOpenAmt() {
@@ -1061,11 +1073,12 @@ public class WPos extends CustomForm
 		lkOrder = new DocumentLink(Msg.translate(ctx, "New"), MOrder.Table_ID, 0);
 		setAD_Org_ID(pos.getAD_Org_ID());
 		setC_BPartner_ID(pos.getC_BPartnerCashTrx_ID());
-		setC_DocType_ID(pos.getC_DocType_ID());
+		setC_DocType_ID(pos.getC_DocType_ID());		
 		setM_Warehouse_ID(pos.getM_Warehouse_ID());
 		setM_PriceList_ID(pos.getM_PriceList_ID());
 		setSalesRep_ID(pos.getSalesRep_ID());
-		setC_POS_ID(pos.getC_POS_ID());		
+		setC_POS_ID(pos.getC_POS_ID());
+		setPaymentRule(MOrder.PAYMENTRULE_MixedPOSPayment);
 	}
 
 	private void refreshContext() {
