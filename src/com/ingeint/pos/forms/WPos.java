@@ -536,7 +536,7 @@ public class WPos extends CustomForm
 		this.entryDateLabel.setText(new StringBuilder().append(Msg.translate(Env.getCtx(), "DateAcct")).toString());
 		this.lblDateScheduled.setText(Msg.translate(Env.getCtx(), "DateOrdered"));
 
-		this.btnProcess.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Validate")).toString());
+		this.btnProcess.setLabel(new StringBuilder().append(Msg.translate(Env.getCtx(), "Confirm")).toString());
 		this.btnProcess.addEventListener(Events.ON_CLICK, this);
 		//this.btnProcess.setImage(ThemeManager.getThemeResource("images/Process24.png"));
 		this.btnProcess.setStyle(st.getBigButtomStyle());
