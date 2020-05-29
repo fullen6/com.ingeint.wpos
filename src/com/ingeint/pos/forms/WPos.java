@@ -11,6 +11,7 @@ import java.util.logging.Level;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.webui.apps.AEnv;
+import org.adempiere.webui.component.AutoComplete;
 import org.adempiere.webui.component.Button;
 import org.adempiere.webui.component.DocumentLink;
 import org.adempiere.webui.component.Grid;
@@ -61,6 +62,8 @@ import org.zkoss.zul.Space;
 import org.zkoss.zul.Vbox;
 import org.zkoss.zul.Window;
 
+import com.cds.specialreference.AutoCompleteTypeFactory;
+import com.cds.specialreference.WAutoCompleteEditor;
 import com.ingeint.pos.base.CustomForm;
 import com.ingeint.pos.functions.CreateUpdateOrder;
 import com.ingeint.pos.functions.PrintOrder;
@@ -185,9 +188,12 @@ public class WPos extends CustomForm
 	int LoginAD_Client_ID = Env.getAD_Client_ID(ctx);
 	int LoginAD_Org_ID = Env.getAD_Org_ID(ctx);
 
-	WSearchEditor fldBP;
-	WSearchEditor fldPR;
-
+	//WSearchEditor fldBP;
+	//WSearchEditor fldPR;
+	
+	WAutoCompleteEditor fldBP;
+	WAutoCompleteEditor fldPR;
+	
 	int COLUMNNAME_QTY = 3;
 	int COLUMNNAME_PRICE = 4;
 	int COLUMNNAME_DELETELINE = 8;
@@ -393,11 +399,15 @@ public class WPos extends CustomForm
 
 			// BPartner
 			AD_Column_ID = 2893;
-			lookupBP = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.Search);
+			/*lookupBP = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.Search);
 			fldBP = new WSearchEditor(MOrder.COLUMNNAME_C_BPartner_ID, true, false, true, lookupBP);
 			fldBP.addValueChangeListener(this);
+			fldBP.setReadWrite(true);*/
+			lookupBP = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, AutoCompleteTypeFactory.AutoComplete);
+			fldBP = new WAutoCompleteEditor(MOrder.COLUMNNAME_C_BPartner_ID, true, false, true, lookupBP);
+			fldBP.addValueChangeListener(this);
 			fldBP.setReadWrite(true);
-
+			
 			if (pos.getC_BPartnerCashTrx_ID() > 0) {
 				fldBP.setValue(getC_BPartner_ID());
 				C_BPartner_ID = (Integer) fldBP.getValue();
@@ -405,11 +415,16 @@ public class WPos extends CustomForm
 
 			// Product
 			AD_Column_ID = 1402;
-			lookupProduct = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.Search);
+			/*lookupProduct = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.Search);
 			fldPR = new WSearchEditor(MOrderLine.COLUMNNAME_M_Product_ID, true, false, true, lookupProduct);
 			fldPR.addValueChangeListener(this);
-			fldPR.setReadWrite(true);
+			fldPR.setReadWrite(true);*/
 
+			lookupProduct = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, AutoCompleteTypeFactory.AutoComplete);
+			fldPR = new WAutoCompleteEditor(MOrderLine.COLUMNNAME_M_Product_ID, true, false, true, lookupProduct);
+			fldPR.addValueChangeListener(this);
+			fldPR.setReadWrite(true);
+			
 			// DocType
 			AD_Column_ID = 2172;
 			MLookup lookupDT = MLookupFactory.get(ctx, this.getWindowNo(), 0, AD_Column_ID, DisplayType.TableDir);
@@ -997,12 +1012,20 @@ public class WPos extends CustomForm
 
 		if (lsComponentProductSearch.size() == 0) {
 			int AD_Column_ID = 2221;
-			MLookup lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID, DisplayType.Search);
+			/*MLookup lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID, DisplayType.Search);
 			WSearchEditor fldPRD = new WSearchEditor("M_Product_ID", true, false, true, lookupPRD);
 			fldPRD.addValueChangeListener(this);
 			fldPRD.setReadWrite(true);
-			fldPRD.setValue(null);
-			Searchbox searchbox = fldPRD.getComponent();
+			fldPRD.setValue(null);*/
+			
+			
+			MLookup lookupPRD = MLookupFactory.get(ctx, this.m_WindowNo, 0, AD_Column_ID, AutoCompleteTypeFactory.AutoComplete);
+			WAutoCompleteEditor fldPRD = new WAutoCompleteEditor("M_Product_ID", true, false, true, lookupPRD);
+			fldPRD.addValueChangeListener(this);
+			fldPRD.setReadWrite(true);
+			//fldPRD.setValue(null);
+			
+			AutoComplete searchbox = fldPRD.getComponent();
 			searchbox.setHflex(null);
 			searchbox.setWidth("96%");
 			lsComponentProductSearch.add(searchbox);
