@@ -7,7 +7,7 @@ Bundle-Version: 7.1.0.qualifier
 Bundle-Vendor: INGEINT <https://www.ingeint.com>
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.apache.commons.lang3,
- org.adempiere.base,
+ org.adempiere.base;bundle-version="0.0.0",
  org.adempiere.plugin.utils,
  org.adempiere.ui.zk,
  zcommon,
@@ -19,7 +19,8 @@ Require-Bundle: org.apache.commons.lang3,
  zul,
  zweb,
  slf4j.api
-Import-Package: org.compiere.minigrid,
+Import-Package: com.cds.specialreference,
+ org.compiere.minigrid,
  org.osgi.service.event
 Service-Component: OSGI-INF/ModelFactory.xml,
  OSGI-INF/EventFactory.xml,
