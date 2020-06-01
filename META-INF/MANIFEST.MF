@@ -19,7 +19,7 @@ Require-Bundle: org.apache.commons.lang3,
  zul,
  zweb,
  slf4j.api
-Import-Package: com.cds.specialreference,
+Import-Package: org.compiere.grid.ed,
  org.compiere.minigrid,
  org.osgi.service.event
 Service-Component: OSGI-INF/ModelFactory.xml,

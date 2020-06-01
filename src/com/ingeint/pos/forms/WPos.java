@@ -62,14 +62,14 @@ import org.zkoss.zul.Space;
 import org.zkoss.zul.Vbox;
 import org.zkoss.zul.Window;
 
-import com.cds.specialreference.AutoCompleteTypeFactory;
-import com.cds.specialreference.WAutoCompleteEditor;
 import com.ingeint.pos.base.CustomForm;
 import com.ingeint.pos.functions.CreateUpdateOrder;
 import com.ingeint.pos.functions.PrintOrder;
 import com.ingeint.pos.model.MCustomPOS;
 import com.ingeint.pos.util.Styles;
 import com.ingeint.pos.util.Utils;
+import com.ingient.specialreference.AutoCompleteTypeFactory;
+import com.ingient.specialreference.WAutoCompleteEditor;
 
 public class WPos extends CustomForm
 		implements IFormController, WTableModelListener, ValueChangeListener, EventListener<Event> {
